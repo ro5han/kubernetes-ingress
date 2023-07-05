@@ -94,14 +94,16 @@ spec:
                   type: string
                 ingressClassName:
                   type: string
-                listener:
-                  description: VirtualServerListener defines a listener for a VirtualServer.
-                  type: object
-                  properties:
-                    name:
-                      type: string
-                    protocol:
-                      type: string
+                listeners:
+                  type: array
+                  items:
+                    description: VirtualServerListener defines a custom listener for a VirtualServer.
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                      protocol:
+                        type: string
                 internalRoute:
                   description: InternalRoute allows for the configuration of internal routing.
                   type: boolean

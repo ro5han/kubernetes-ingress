@@ -500,7 +500,8 @@ func (c *Configuration) AddOrUpdateVirtualServer(vs *conf_v1.VirtualServer) ([]R
 	changes, problems := c.rebuildHosts()
 
 	// TODO Code condition for rebuilding listeners
-	if vs.Spec.Listener.Name != "" {
+	if len(vs.Spec.Listeners) != 0 {
+		// TODO Create either a new method for rebuilding VS listeners, or add a condition in exist method.
 		listenerChanges, listenerProblems := c.rebuildListeners()
 		changes = append(changes, listenerChanges...)
 		problems = append(problems, listenerProblems...)
@@ -720,19 +721,22 @@ func (c *Configuration) DeleteTransportServer(key string) ([]ResourceChange, []C
 
 func (c *Configuration) rebuildListeners() ([]ResourceChange, []ConfigurationProblem) {
 
-	//newListeners, newTSConfigs := c.buildListenersAndTSConfigurations()
+	//
+	// Below code commented out that may work for VS listeners.
+	//
 
-	newTSListeners, newVSListeners, newTSConfigs, newVSConfigs := c.buildListenersAndConfigurations()
+	//newTSListeners, newVSListeners, newTSConfigs, newVSConfigs := c.buildListenersAndConfigurations()
 
-	removedVSListeners, updatedVSListeners, addedVSListeners := detectChangesInVSListeners(c.vsListeners, newVSListeners)
-	changes := createResourceChangesVSForListeners(removedVSListeners, updatedVSListeners, addedVSListeners, c.vsListeners, newVSListeners)
+	//removedVSListeners, updatedVSListeners, addedVSListeners := detectChangesInVSListeners(c.vsListeners, newVSListeners)
+	//changes := createResourceChangesVSForListeners(removedVSListeners, updatedVSListeners, addedVSListeners, c.vsListeners, newVSListeners)
+
+	newListeners, newTSConfigs := c.buildListenersAndTSConfigurations()
 
 	// Changes for TS Listeners.
-	removedTSListeners, updatedTSListeners, addedTSListeners := detectChangesInTSListeners(c.tsListeners, newTSListeners)
-	changes = append(changes, createResourceChangesTSForListeners(removedTSListeners, updatedTSListeners, addedTSListeners, c.tsListeners, newTSListeners)...)
+	removedListeners, updatedListeners, addedListeners := detectChangesInTSListeners(c.tsListeners, newListeners)
+	changes := createResourceChangesTSForListeners(removedListeners, updatedListeners, addedListeners, c.tsListeners, newListeners)
 
-	c.tsListeners = newTSListeners
-	c.vsListeners = newVSListeners
+	c.tsListeners = newListeners
 
 	changes = squashResourceChanges(changes)
 
@@ -758,125 +762,121 @@ func (c *Configuration) rebuildListeners() ([]ResourceChange, []ConfigurationPro
 	return changes, newOrUpdatedProblems
 }
 
-func (c *Configuration) buildListenersAndConfigurations() (
-	newTSListeners map[string]*TransportServerConfiguration,
-	newVSListeners map[string][]*VirtualServerConfiguration,
-	newTSConfigs map[string]*TransportServerConfiguration,
-	newVSConfigs map[string]*VirtualServerConfiguration) {
-
-	newTSListeners = make(map[string]*TransportServerConfiguration)
-	newVSListeners = make(map[string][]*VirtualServerConfiguration)
-	newTSConfigs = make(map[string]*TransportServerConfiguration)
-	newVSConfigs = make(map[string]*VirtualServerConfiguration)
-	vscList := make([]*VirtualServerConfiguration, 0)
-
-	// Step 1. Build VirtualServer Listeners
-	for key, vs := range c.virtualServers {
-		if vs.Spec.Listener.Protocol == conf_v1alpha1.TLSPassthroughListenerProtocol {
-			continue
-		}
-
-		if c.globalConfiguration == nil {
-			continue
-		}
-
-		vsrs, warnings := c.buildVirtualServerRoutes(vs)
-
-		vsc := NewVirtualServerConfiguration(vs, vsrs, warnings)
-
-		newVSConfigs[key] = vsc
-
-		vscList = append(vscList, vsc)
-
-		found := false
-		var listener conf_v1alpha1.Listener
-		for _, l := range c.globalConfiguration.Spec.Listeners {
-			if vs.Spec.Listener.Name == l.Name && vs.Spec.Listener.Protocol == l.Protocol {
-				listener = l
-				found = true
-				break
-			}
-		}
-
-		if !found {
-			continue
-		}
-
-		vsc.ListenerPort = listener.Port
-
-		// For VS, we don't care if another VS is using the same listener.
-		// We only care if it has the same host.
-
-		newVSListeners[listener.Name] = vscList
-
-		//_, exists := newVSListeners[listener.Name]
-		//if !exists {
-		//	// This should NOT be a 1:1 mapping of listener.Name to vsc.
-		//	// We can have more than one VS reference a listener.
-		//	// e.g. newVSListeners[listener.Name][vscRef] = vsc
-		//	newVSListeners[listener.Name] = vscList
-		//	continue
-		//}
-
-		//warning := fmt.Sprintf("listener %s is taken by another resource", listener.Name)
-		//
-		//if !holder.Wins(vsc) {
-		//	holder.AddWarning(warning)
-		//	newVSListeners[listener.Name] = vsc
-		//} else {
-		//	vsc.AddWarning(warning)
-		//}
-
-	}
-
-	// Step 2. Build TransportServer Listeners.
-
-	for key, ts := range c.transportServers {
-		if ts.Spec.Listener.Protocol == conf_v1alpha1.TLSPassthroughListenerProtocol {
-			continue
-		}
-
-		tsc := NewTransportServerConfiguration(ts)
-		newTSConfigs[key] = tsc
-
-		if c.globalConfiguration == nil {
-			continue
-		}
-
-		found := false
-		var listener conf_v1alpha1.Listener
-		for _, l := range c.globalConfiguration.Spec.Listeners {
-			if ts.Spec.Listener.Name == l.Name && ts.Spec.Listener.Protocol == l.Protocol {
-				listener = l
-				found = true
-				break
-			}
-		}
-
-		if !found {
-			continue
-		}
-
-		tsc.ListenerPort = listener.Port
-
-		holder, exists := newTSListeners[listener.Name]
-		if !exists {
-			newTSListeners[listener.Name] = tsc
-			continue
-		}
-
-		warning := fmt.Sprintf("listener %s is taken by another resource", listener.Name)
-
-		if !holder.Wins(tsc) {
-			holder.AddWarning(warning)
-			newTSListeners[listener.Name] = tsc
-		} else {
-			tsc.AddWarning(warning)
-		}
-	}
-
-	return newTSListeners, newVSListeners, newTSConfigs, newVSConfigs
-}
+//func (c *Configuration) buildListenersAndConfigurations() (newTSListeners map[string]*TransportServerConfiguration, newVSListeners map[string][]*VirtualServerConfiguration, newTSConfigs map[string]*TransportServerConfiguration, newVSConfigs map[string]*VirtualServerConfiguration) {
+//
+//	newTSListeners = make(map[string]*TransportServerConfiguration)
+//	newVSListeners = make(map[string][]*VirtualServerConfiguration)
+//	newTSConfigs = make(map[string]*TransportServerConfiguration)
+//	newVSConfigs = make(map[string]*VirtualServerConfiguration)
+//	vscList := make([]*VirtualServerConfiguration, 0)
+//
+//	// Step 1. Build VirtualServer Listeners
+//	for key, vs := range c.virtualServers {
+//		if vs.Spec.Listener.Protocol == conf_v1alpha1.TLSPassthroughListenerProtocol {
+//			continue
+//		}
+//
+//		if c.globalConfiguration == nil {
+//			continue
+//		}
+//
+//		vsrs, warnings := c.buildVirtualServerRoutes(vs)
+//
+//		vsc := NewVirtualServerConfiguration(vs, vsrs, warnings)
+//
+//		newVSConfigs[key] = vsc
+//
+//		vscList = append(vscList, vsc)
+//
+//		found := false
+//		var listener conf_v1alpha1.Listener
+//		for _, l := range c.globalConfiguration.Spec.Listeners {
+//			if vs.Spec.Listener.Name == l.Name && vs.Spec.Listener.Protocol == l.Protocol {
+//				listener = l
+//				found = true
+//				break
+//			}
+//		}
+//
+//		if !found {
+//			continue
+//		}
+//
+//		vsc.ListenerPort = listener.Port
+//
+//		// For VS, we don't care if another VS is using the same listener.
+//		// We only care if it has the same host.
+//
+//		newVSListeners[listener.Name] = vscList
+//
+//		//_, exists := newVSListeners[listener.Name]
+//		//if !exists {
+//		//	// This should NOT be a 1:1 mapping of listener.Name to vsc.
+//		//	// We can have more than one VS reference a listener.
+//		//	// e.g. newVSListeners[listener.Name][vscRef] = vsc
+//		//	newVSListeners[listener.Name] = vscList
+//		//	continue
+//		//}
+//
+//		//warning := fmt.Sprintf("listener %s is taken by another resource", listener.Name)
+//		//
+//		//if !holder.Wins(vsc) {
+//		//	holder.AddWarning(warning)
+//		//	newVSListeners[listener.Name] = vsc
+//		//} else {
+//		//	vsc.AddWarning(warning)
+//		//}
+//
+//	}
+//
+//	// Step 2. Build TransportServer Listeners.
+//
+//	for key, ts := range c.transportServers {
+//		if ts.Spec.Listener.Protocol == conf_v1alpha1.TLSPassthroughListenerProtocol {
+//			continue
+//		}
+//
+//		tsc := NewTransportServerConfiguration(ts)
+//		newTSConfigs[key] = tsc
+//
+//		if c.globalConfiguration == nil {
+//			continue
+//		}
+//
+//		found := false
+//		var listener conf_v1alpha1.Listener
+//		for _, l := range c.globalConfiguration.Spec.Listeners {
+//			if ts.Spec.Listener.Name == l.Name && ts.Spec.Listener.Protocol == l.Protocol {
+//				listener = l
+//				found = true
+//				break
+//			}
+//		}
+//
+//		if !found {
+//			continue
+//		}
+//
+//		tsc.ListenerPort = listener.Port
+//
+//		holder, exists := newTSListeners[listener.Name]
+//		if !exists {
+//			newTSListeners[listener.Name] = tsc
+//			continue
+//		}
+//
+//		warning := fmt.Sprintf("listener %s is taken by another resource", listener.Name)
+//
+//		if !holder.Wins(tsc) {
+//			holder.AddWarning(warning)
+//			newTSListeners[listener.Name] = tsc
+//		} else {
+//			tsc.AddWarning(warning)
+//		}
+//	}
+//
+//	return newTSListeners, newVSListeners, newTSConfigs, newVSConfigs
+//}
 
 func (c *Configuration) buildListenersAndTSConfigurations() (newListeners map[string]*TransportServerConfiguration, newTSConfigs map[string]*TransportServerConfiguration) {
 	newListeners = make(map[string]*TransportServerConfiguration)
@@ -1378,50 +1378,50 @@ func createResourceChangesTSForListeners(removedListeners []string, updatedListe
 	return append(deleteChanges, changes...)
 }
 
-func createResourceChangesVSForListeners(removedListeners []string, updatedListeners []string, addedListeners []string, oldListeners map[string][]*VirtualServerConfiguration,
-	newListeners map[string][]*VirtualServerConfiguration,
-) []ResourceChange {
-	var changes []ResourceChange
-	var deleteChanges []ResourceChange
-
-	for _, l := range removedListeners {
-		change := ResourceChange{
-			Op:       Delete,
-			Resource: oldListeners[l],
-		}
-		deleteChanges = append(deleteChanges, change)
-	}
-
-	for _, l := range updatedListeners {
-		if oldListeners[l].GetKeyWithKind() != newListeners[l].GetKeyWithKind() {
-			deleteChange := ResourceChange{
-				Op:       Delete,
-				Resource: oldListeners[l],
-			}
-			deleteChanges = append(deleteChanges, deleteChange)
-		}
-
-		change := ResourceChange{
-			Op:       AddOrUpdate,
-			Resource: newListeners[l],
-		}
-		changes = append(changes, change)
-	}
-
-	for _, l := range addedListeners {
-		change := ResourceChange{
-			Op:       AddOrUpdate,
-			Resource: newListeners[l],
-		}
-		changes = append(changes, change)
-	}
-
-	// We need to ensure that delete changes come first.
-	// This way an addOrUpdate change, which might include a resource that uses the same listener as a resource
-	// in a delete change, will be processed only after the config of the delete change is removed.
-	// That will prevent any listener collisions in the NGINX config in the state between the changes.
-	return append(deleteChanges, changes...)
-}
+//func createResourceChangesVSForListeners(removedListeners []string, updatedListeners []string, addedListeners []string, oldListeners map[string][]*VirtualServerConfiguration,
+//	newListeners map[string][]*VirtualServerConfiguration,
+//) []ResourceChange {
+//	var changes []ResourceChange
+//	var deleteChanges []ResourceChange
+//
+//	for _, l := range removedListeners {
+//		change := ResourceChange{
+//			Op:       Delete,
+//			Resource: oldListeners[l],
+//		}
+//		deleteChanges = append(deleteChanges, change)
+//	}
+//
+//	for _, l := range updatedListeners {
+//		if oldListeners[l].GetKeyWithKind() != newListeners[l].GetKeyWithKind() {
+//			deleteChange := ResourceChange{
+//				Op:       Delete,
+//				Resource: oldListeners[l],
+//			}
+//			deleteChanges = append(deleteChanges, deleteChange)
+//		}
+//
+//		change := ResourceChange{
+//			Op:       AddOrUpdate,
+//			Resource: newListeners[l],
+//		}
+//		changes = append(changes, change)
+//	}
+//
+//	for _, l := range addedListeners {
+//		change := ResourceChange{
+//			Op:       AddOrUpdate,
+//			Resource: newListeners[l],
+//		}
+//		changes = append(changes, change)
+//	}
+//
+//	// We need to ensure that delete changes come first.
+//	// This way an addOrUpdate change, which might include a resource that uses the same listener as a resource
+//	// in a delete change, will be processed only after the config of the delete change is removed.
+//	// That will prevent any listener collisions in the NGINX config in the state between the changes.
+//	return append(deleteChanges, changes...)
+//}
 
 func squashResourceChanges(changes []ResourceChange) []ResourceChange {
 	// deletes for the same resource become a single delete
@@ -1895,48 +1895,47 @@ func detectChangesInTSListeners(oldListeners map[string]*TransportServerConfigur
 	return removedListeners, updatedListeners, addedListeners
 }
 
-func detectChangesInVSListeners(oldListeners map[string][]*VirtualServerConfiguration, newListeners map[string][]*VirtualServerConfiguration) (removedListeners []string,
-	updatedListeners []string, addedListeners []string,
-) {
-	for _, l := range getSortedVirtualServerConfigurationKeys(oldListeners) {
-		_, exists := newListeners[l]
-
-		if !exists {
-			removedListeners = append(removedListeners, l)
-			continue
-		}
-
-		// Need to find the difference in VirtualServerConfiguration types that are mapped to each listener
-
-		//oldR, _ := oldListeners[l]
-		//
-		//for _, r := range resource {
-		//	fmt.Sprint(r)
-		//
-		//}
-
-	}
-
-	for _, l := range getSortedVirtualServerConfigurationKeys(newListeners) {
-		_, exists := oldListeners[l]
-		if !exists {
-			addedListeners = append(addedListeners, l)
-		}
-	}
-
-	for _, l := range getSortedVirtualServerConfigurationKeys(newListeners) {
-		oldResource, exists := oldListeners[l]
-		if !exists {
-			continue
-		}
-
-		for i, r := range oldResource {
-			if !r.IsEqual(newListeners[l]) {
-				updatedListeners = append(updatedListeners, l)
-			}
-		}
-
-	}
-
-	return removedListeners, updatedListeners, addedListeners
-}
+//func detectChangesInVSListeners(oldListeners map[string][]*VirtualServerConfiguration, newListeners map[string][]*VirtualServerConfiguration) (removedListeners []string,  updatedListeners []string, addedListeners []string ) {
+//
+//	for _, l := range getSortedVirtualServerConfigurationKeys(oldListeners) {
+//		_, exists := newListeners[l]
+//
+//		if !exists {
+//			removedListeners = append(removedListeners, l)
+//			continue
+//		}
+//
+//		// Need to find the difference in VirtualServerConfiguration types that are mapped to each listener
+//
+//		//oldR, _ := oldListeners[l]
+//		//
+//		//for _, r := range resource {
+//		//	fmt.Sprint(r)
+//		//
+//		//}
+//
+//	}
+//
+//	for _, l := range getSortedVirtualServerConfigurationKeys(newListeners) {
+//		_, exists := oldListeners[l]
+//		if !exists {
+//			addedListeners = append(addedListeners, l)
+//		}
+//	}
+//
+//	for _, l := range getSortedVirtualServerConfigurationKeys(newListeners) {
+//		oldResource, exists := oldListeners[l]
+//		if !exists {
+//			continue
+//		}
+//
+//		for i, r := range oldResource {
+//			if !r.IsEqual(newListeners[l]) {
+//				updatedListeners = append(updatedListeners, l)
+//			}
+//		}
+//
+//	}
+//
+//	return removedListeners, updatedListeners, addedListeners
+//}

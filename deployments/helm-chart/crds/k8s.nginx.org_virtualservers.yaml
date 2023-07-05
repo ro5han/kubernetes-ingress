@@ -97,6 +97,14 @@ spec:
                 internalRoute:
                   description: InternalRoute allows for the configuration of internal routing.
                   type: boolean
+                listener:
+                  description: VirtualServerListener defines a listener for a TransportServer.
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    protocol:
+                      type: string
                 policies:
                   type: array
                   items:
