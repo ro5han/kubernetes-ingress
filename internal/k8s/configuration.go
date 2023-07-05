@@ -722,8 +722,6 @@ func (c *Configuration) rebuildListeners() ([]ResourceChange, []ConfigurationPro
 
 	//newListeners, newTSConfigs := c.buildListenersAndTSConfigurations()
 
-	//newVSListeners, _ := c.buildListenersAndVSConfiguration()
-
 	newTSListeners, newVSListeners, newTSConfigs, newVSConfigs := c.buildListenersAndConfigurations()
 
 	removedVSListeners, updatedVSListeners, addedVSListeners := detectChangesInVSListeners(c.vsListeners, newVSListeners)
@@ -878,71 +876,6 @@ func (c *Configuration) buildListenersAndConfigurations() (
 	}
 
 	return newTSListeners, newVSListeners, newTSConfigs, newVSConfigs
-}
-
-func (c *Configuration) buildListenersAndVSConfiguration() (newVSListeners map[string][]*VirtualServerConfiguration, newVSConfigs map[string]*VirtualServerConfiguration) {
-	newVSListeners = make(map[string][]*VirtualServerConfiguration)
-	newVSConfigs = make(map[string]*VirtualServerConfiguration)
-	vscList := make([]*VirtualServerConfiguration, 0)
-
-	for key, vs := range c.virtualServers {
-		if vs.Spec.Listener.Protocol == conf_v1alpha1.TLSPassthroughListenerProtocol {
-			continue
-		}
-
-		if c.globalConfiguration == nil {
-			continue
-		}
-
-		vsrs, warnings := c.buildVirtualServerRoutes(vs)
-
-		vsc := NewVirtualServerConfiguration(vs, vsrs, warnings)
-
-		newVSConfigs[key] = vsc
-
-		vscList = append(vscList, vsc)
-
-		found := false
-		var listener conf_v1alpha1.Listener
-		for _, l := range c.globalConfiguration.Spec.Listeners {
-			if vs.Spec.Listener.Name == l.Name && vs.Spec.Listener.Protocol == l.Protocol {
-				listener = l
-				found = true
-				break
-			}
-		}
-
-		if !found {
-			continue
-		}
-
-		vsc.ListenerPort = listener.Port
-
-		// For VS, we don't care if another VS is using the same listener.
-		// We only care if it has the same host.
-
-		newVSListeners[listener.Name] = vscList
-
-		//_, exists := newVSListeners[listener.Name]
-		//if !exists {
-		//	// This should NOT be a 1:1 mapping of listener.Name to vsc.
-		//	// We can have more than one VS reference a listener.
-		//	// e.g. newVSListeners[listener.Name][vscRef] = vsc
-		//	newVSListeners[listener.Name] = vscList
-		//	continue
-		//}
-
-		//warning := fmt.Sprintf("listener %s is taken by another resource", listener.Name)
-		//
-		//if !holder.Wins(vsc) {
-		//	holder.AddWarning(warning)
-		//	newVSListeners[listener.Name] = vsc
-		//} else {
-		//	vsc.AddWarning(warning)
-		//}
-
-	}
-	return newVSListeners, newVSConfigs
 }
 
 func (c *Configuration) buildListenersAndTSConfigurations() (newListeners map[string]*TransportServerConfiguration, newTSConfigs map[string]*TransportServerConfiguration) {
