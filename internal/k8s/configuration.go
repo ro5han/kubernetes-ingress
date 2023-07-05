@@ -499,9 +499,12 @@ func (c *Configuration) AddOrUpdateVirtualServer(vs *conf_v1.VirtualServer) ([]R
 
 	changes, problems := c.rebuildHosts()
 
-	// TODO: This needs to be added as part of the 'changes'.
-	vsListener, _ := c.buildListenersAndVSConfiguration()
-	c.vsListeners = vsListener
+	// TODO Code condition for rebuilding listeners
+	if vs.Spec.Listener.Name != "" {
+		listenerChanges, listenerProblems := c.rebuildListeners()
+		changes = append(changes, listenerChanges...)
+		problems = append(problems, listenerProblems...)
+	}
 
 	if validationError != nil {
 		// If the invalid resource has an active host, rebuildHosts will create a change
