@@ -2399,7 +2399,7 @@ func TestAddGlobalConfiguration(t *testing.T) {
 		t.Errorf("AddOrUpdateTransportServer() returned unexpected result (-want +got):\n%s", diff)
 	}
 
-	// Swap listeners
+	// Swap tsListeners
 
 	// We need to handle this case in Controller propoperly - update config for all TransportServers and reload once
 	// to avoid any race conditions
@@ -2473,7 +2473,7 @@ func TestAddGlobalConfiguration(t *testing.T) {
 			Message: "Listener tcp-8888 doesn't exist",
 		},
 	}
-	expectedErrMsg := "spec.listeners[0].port: Invalid value: -1: must be between 1 and 65535, inclusive"
+	expectedErrMsg := "spec.tsListeners[0].port: Invalid value: -1: must be between 1 and 65535, inclusive"
 
 	changes, problems, err = configuration.AddOrUpdateGlobalConfiguration(invalidGC)
 	if diff := cmp.Diff(expectedChanges, changes); diff != "" {
@@ -3356,7 +3356,7 @@ func TestFindResourcesForResourceReference(t *testing.T) {
 			},
 			expected: []Resource{
 				configuration.hosts["ts.example.com"],
-				configuration.listeners["tcp-7777"],
+				configuration.tsListeners["tcp-7777"],
 			},
 			msg: "only TransportServers",
 		},
@@ -3412,7 +3412,7 @@ func TestGetResources(t *testing.T) {
 	expected := []Resource{
 		configuration.hosts["foo.example.com"],
 		configuration.hosts["abc.example.com"],
-		configuration.listeners["tcp-7777"],
+		configuration.tsListeners["tcp-7777"],
 		configuration.hosts["qwe.example.com"],
 	}
 
@@ -3441,7 +3441,7 @@ func TestGetResources(t *testing.T) {
 
 	expected = []Resource{
 		configuration.hosts["abc.example.com"],
-		configuration.listeners["tcp-7777"],
+		configuration.tsListeners["tcp-7777"],
 	}
 
 	result = configuration.GetResourcesWithFilter(resourceFilter{TransportServers: true})

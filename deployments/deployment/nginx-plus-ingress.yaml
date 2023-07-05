@@ -33,8 +33,8 @@ spec:
 #      - name: nginx-log
 #        emptyDir: {}
       containers:
-      - image: nginx-plus-ingress:3.2.0
-        imagePullPolicy: IfNotPresent
+      - image: gcr.io/f5-gcs-7899-ptg-ingrss-ctlr/release/nginx-ic/nginx-plus-ingress:3.2.0
+        imagePullPolicy: Always
         name: nginx-plus-ingress
         ports:
         - name: http
@@ -101,9 +101,9 @@ spec:
          #- -external-service=nginx-ingress
          #- -enable-prometheus-metrics
          #- -enable-service-insight
-         #- -global-configuration=$(POD_NAMESPACE)/nginx-configuration
+          - -global-configuration=$(POD_NAMESPACE)/nginx-configuration
 #      initContainers:
-#      - image: nginx/nginx-ingress:3.2.0
+#      - image: nginx/nginx-ingress:3.1.1
 #        imagePullPolicy: IfNotPresent
 #        name: init-nginx-ingress
 #        command: ['cp', '-vdR', '/etc/nginx/.', '/mnt/etc']

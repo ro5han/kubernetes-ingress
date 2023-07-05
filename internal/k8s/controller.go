@@ -832,7 +832,7 @@ func (lbc *LoadBalancerController) createExtendedResources(resources []Resource)
 		switch impl := r.(type) {
 		case *VirtualServerConfiguration:
 			vs := impl.VirtualServer
-			vsEx := lbc.createVirtualServerEx(vs, impl.VirtualServerRoutes)
+			vsEx := lbc.createVirtualServerEx(vs, impl.VirtualServerRoutes, impl.ListenerPort)
 			result.VirtualServerExes = append(result.VirtualServerExes, vsEx)
 		case *IngressConfiguration:
 
@@ -1514,7 +1514,7 @@ func (lbc *LoadBalancerController) processChanges(changes []ResourceChange) {
 		if c.Op == AddOrUpdate {
 			switch impl := c.Resource.(type) {
 			case *VirtualServerConfiguration:
-				vsEx := lbc.createVirtualServerEx(impl.VirtualServer, impl.VirtualServerRoutes)
+				vsEx := lbc.createVirtualServerEx(impl.VirtualServer, impl.VirtualServerRoutes, impl.ListenerPort)
 
 				warnings, addOrUpdateErr := lbc.configurator.AddOrUpdateVirtualServer(vsEx)
 				lbc.updateVirtualServerStatusAndEvents(impl, warnings, addOrUpdateErr)
@@ -2917,7 +2917,7 @@ func (lbc *LoadBalancerController) getAppProtectPolicy(ing *networking.Ingress) 
 	return apPolicy, nil
 }
 
-func (lbc *LoadBalancerController) createVirtualServerEx(virtualServer *conf_v1.VirtualServer, virtualServerRoutes []*conf_v1.VirtualServerRoute) *configs.VirtualServerEx {
+func (lbc *LoadBalancerController) createVirtualServerEx(virtualServer *conf_v1.VirtualServer, virtualServerRoutes []*conf_v1.VirtualServerRoute, listenerPort int) *configs.VirtualServerEx {
 	virtualServerEx := configs.VirtualServerEx{
 		VirtualServer:  virtualServer,
 		SecretRefs:     make(map[string]*secrets.SecretReference),
@@ -3159,6 +3159,7 @@ func (lbc *LoadBalancerController) createVirtualServerEx(virtualServer *conf_v1.
 	virtualServerEx.ExternalNameSvcs = externalNameSvcs
 	virtualServerEx.Policies = createPolicyMap(policies)
 	virtualServerEx.PodsByIP = podsByIP
+	virtualServerEx.ListenerPort = listenerPort
 
 	return &virtualServerEx
 }

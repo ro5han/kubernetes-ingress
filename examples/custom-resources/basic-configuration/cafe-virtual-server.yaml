@@ -3,6 +3,9 @@ kind: VirtualServer
 metadata:
   name: cafe
 spec:
+  listener:
+    name: dns-tcp
+    protocol: TCP
   host: cafe.example.com
   tls:
     secret: cafe-secret

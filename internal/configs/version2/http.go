@@ -51,6 +51,7 @@ type Server struct {
 	ServerName                string
 	StatusZone                string
 	ProxyProtocol             bool
+	Port                      int
 	SSL                       *SSL
 	ServerTokens              string
 	RealIPHeader              string

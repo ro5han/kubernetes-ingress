@@ -36,19 +36,26 @@ type VirtualServer struct {
 
 // VirtualServerSpec is the spec of the VirtualServer resource.
 type VirtualServerSpec struct {
-	IngressClass   string            `json:"ingressClassName"`
-	Host           string            `json:"host"`
-	TLS            *TLS              `json:"tls"`
-	Gunzip         bool              `json:"gunzip"`
-	Policies       []PolicyReference `json:"policies"`
-	Upstreams      []Upstream        `json:"upstreams"`
-	Routes         []Route           `json:"routes"`
-	HTTPSnippets   string            `json:"http-snippets"`
-	ServerSnippets string            `json:"server-snippets"`
-	Dos            string            `json:"dos"`
-	ExternalDNS    ExternalDNS       `json:"externalDNS"`
+	IngressClass   string                `json:"ingressClassName"`
+	Listener       VirtualServerListener `json:"listener"`
+	Host           string                `json:"host"`
+	TLS            *TLS                  `json:"tls"`
+	Gunzip         bool                  `json:"gunzip"`
+	Policies       []PolicyReference     `json:"policies"`
+	Upstreams      []Upstream            `json:"upstreams"`
+	Routes         []Route               `json:"routes"`
+	HTTPSnippets   string                `json:"http-snippets"`
+	ServerSnippets string                `json:"server-snippets"`
+	Dos            string                `json:"dos"`
+	ExternalDNS    ExternalDNS           `json:"externalDNS"`
 	// InternalRoute allows for the configuration of internal routing.
 	InternalRoute bool `json:"internalRoute"`
+}
+
+// VirtualServerListener defines a listener for a TransportServer.
+type VirtualServerListener struct {
+	Name     string `json:"name"`
+	Protocol string `json:"protocol"`
 }
 
 // ExternalDNS defines externaldns sub-resource of a virtual server.

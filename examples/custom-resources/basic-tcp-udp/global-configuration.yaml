@@ -9,5 +9,5 @@ spec:
     port: 5353
     protocol: UDP
   - name: dns-tcp
-    port: 5353
+    port: 8082
     protocol: TCP

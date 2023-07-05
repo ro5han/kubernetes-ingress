@@ -76,6 +76,7 @@ type PodInfo struct {
 // VirtualServerEx holds a VirtualServer along with the resources that are referenced in this VirtualServer.
 type VirtualServerEx struct {
 	VirtualServer       *conf_v1.VirtualServer
+	ListenerPort        int
 	Endpoints           map[string][]string
 	VirtualServerRoutes []*conf_v1.VirtualServerRoute
 	ExternalNameSvcs    map[string]bool
@@ -687,6 +688,7 @@ func (vsc *virtualServerConfigurator) GenerateVirtualServerConfig(
 			Gunzip:                    vsEx.VirtualServer.Spec.Gunzip,
 			StatusZone:                vsEx.VirtualServer.Spec.Host,
 			ProxyProtocol:             vsc.cfgParams.ProxyProtocol,
+			Port:                      vsEx.ListenerPort,
 			SSL:                       sslConfig,
 			ServerTokens:              vsc.cfgParams.ServerTokens,
 			SetRealIPFrom:             vsc.cfgParams.SetRealIPFrom,
