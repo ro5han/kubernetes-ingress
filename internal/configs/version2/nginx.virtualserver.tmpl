@@ -41,8 +41,19 @@ limit_req_zone {{ $z.Key }} zone={{ $z.ZoneName }}:{{ $z.ZoneSize }} rate={{ $z.
 {{ $s := .Server }}
 server {
     {{ if $s.Gunzip }}gunzip on;{{end}}
-    listen {{ if $s.Port }}{{ $s.Port}}{{ else }} 80{{ end}}{{ if $s.ProxyProtocol }} proxy_protocol{{ end }};
+    listen 80{{ if $s.ProxyProtocol }} proxy_protocol{{ end }};
     {{ if not $s.DisableIPV6 }}listen [::]:80{{ if $s.ProxyProtocol }} proxy_protocol{{ end }};{{ end }}
+
+    {{ range $listener := $s.Listeners }}
+        {{ if not $listener.ssl }}
+        {{ if or (eq $listener.ipFamily ipv4) ($listener.ipFamily "both") }}
+    listen {{ $listener.port }};
+        {{ end }}
+        {{ if or (eq $listener.ipFamily ipv6) ($listener.ipFamily "both") }}
+    listen [::]:{{ $listener.port}};
+        {{ end }}
+        {{ end }}
+    {{ end }}
 
     server_name {{ $s.ServerName }};
 
@@ -59,6 +70,18 @@ server {
         {{ else }}
     listen 443 ssl{{ if $ssl.HTTP2 }} http2{{ end }}{{ if $s.ProxyProtocol }} proxy_protocol{{ end }};
     {{ if not $s.DisableIPV6 }}listen [::]:443 ssl{{ if $ssl.HTTP2 }} http2{{ end }}{{ if $s.ProxyProtocol }} proxy_protocol{{ end }};{{ end }}
+
+    {{ range $listener := $s.Listeners }}
+        {{ if $listener.ssl }}
+        {{ if or (eq $listener.ipFamily ipv4) ($listener.ipFamily "both") }}
+    listen {{ $listener.port }};
+        {{ end }}
+        {{ if or (eq $listener.ipFamily ipv6) ($listener.ipFamily "both") }}
+    listen [::]:{{ $listener.port}};
+        {{ end }}
+        {{ end }}
+    {{ end }}
+
         {{ end }}
 
         {{ if $ssl.RejectHandshake }}
