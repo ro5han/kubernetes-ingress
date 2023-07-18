@@ -88,6 +88,15 @@ spec:
                       type: string
                 gunzip:
                   type: boolean
+                listeners:
+                  description: Defines a list of custom listeners
+                  type: array
+                  items:
+                    description: Defines a listener referenced to in GlobalConfiguration
+                    type: object
+                    properties:
+                      name:
+                        type: string
                 host:
                   type: string
                 http-snippets:

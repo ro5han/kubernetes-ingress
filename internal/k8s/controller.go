@@ -19,6 +19,7 @@ package k8s
 import (
 	"context"
 	"fmt"
+	"github.com/nginxinc/kubernetes-ingress/internal/configs/version2"
 	"net"
 	"strconv"
 	"strings"
@@ -1515,6 +1516,7 @@ func (lbc *LoadBalancerController) processChanges(changes []ResourceChange) {
 		if c.Op == AddOrUpdate {
 			switch impl := c.Resource.(type) {
 			case *VirtualServerConfiguration:
+				// TODO add list of listeners to this function.
 				vsEx := lbc.createVirtualServerEx(impl.VirtualServer, impl.VirtualServerRoutes)
 
 				warnings, addOrUpdateErr := lbc.configurator.AddOrUpdateVirtualServer(vsEx)
@@ -2918,13 +2920,29 @@ func (lbc *LoadBalancerController) getAppProtectPolicy(ing *networking.Ingress) 
 	return apPolicy, nil
 }
 
-func (lbc *LoadBalancerController) createVirtualServerEx(virtualServer *conf_v1.VirtualServer, virtualServerRoutes []*conf_v1.VirtualServerRoute) *configs.VirtualServerEx {
+func (lbc *LoadBalancerController) createVirtualServerEx(virtualServer *conf_v1.VirtualServer,
+	virtualServerRoutes []*conf_v1.VirtualServerRoute) *configs.VirtualServerEx {
 	virtualServerEx := configs.VirtualServerEx{
 		VirtualServer:  virtualServer,
+		Listeners:      make([]*version2.Listener, 0),
 		SecretRefs:     make(map[string]*secrets.SecretReference),
 		ApPolRefs:      make(map[string]*unstructured.Unstructured),
 		LogConfRefs:    make(map[string]*unstructured.Unstructured),
 		DosProtectedEx: make(map[string]*configs.DosEx),
+	}
+
+	vsConfigKey := fmt.Sprintf("%s/%s", virtualServer.Namespace, virtualServerEx.VirtualServer.Name)
+
+	if vsc, exists := lbc.configuration.vsConfigs[vsConfigKey]; exists {
+		for _, listener := range vsc.Listeners {
+			virtualServerListener := &version2.Listener{
+				Name:     listener.Name,
+				Port:     listener.Port,
+				Protocol: listener.Protocol,
+				Ssl:      listener.Ssl,
+			}
+			virtualServerEx.Listeners = append(virtualServerEx.Listeners, virtualServerListener)
+		}
 	}
 
 	if virtualServer.Spec.TLS != nil && virtualServer.Spec.TLS.Secret != "" {

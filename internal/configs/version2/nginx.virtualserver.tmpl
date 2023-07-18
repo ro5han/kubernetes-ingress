@@ -44,6 +44,11 @@ server {
     listen 80{{ if $s.ProxyProtocol }} proxy_protocol{{ end }};
     {{ if not $s.DisableIPV6 }}listen [::]:80{{ if $s.ProxyProtocol }} proxy_protocol{{ end }};{{ end }}
 
+    # Custom HTTP Listeners
+    {{ range $listener := $s.Listeners }}
+    {{ if not $listener.Ssl }}listen {{ $listener.Port }}; {{- end }}
+    {{- end }}
+
     server_name {{ $s.ServerName }};
 
     set $resource_type "virtualserver";
@@ -60,6 +65,11 @@ server {
     listen 443 ssl{{ if $ssl.HTTP2 }} http2{{ end }}{{ if $s.ProxyProtocol }} proxy_protocol{{ end }};
     {{ if not $s.DisableIPV6 }}listen [::]:443 ssl{{ if $ssl.HTTP2 }} http2{{ end }}{{ if $s.ProxyProtocol }} proxy_protocol{{ end }};{{ end }}
         {{ end }}
+
+    # Custom HTTPs Listeners
+    {{ range $listener := $s.Listeners }}
+    {{ if $listener.Ssl }}listen {{ $listener.Port }} ssl;{{- end }}
+    {{- end }}
 
         {{ if $ssl.RejectHandshake }}
     ssl_reject_handshake on;

@@ -11,6 +11,9 @@ const (
 	StateValid = "Valid"
 	// StateInvalid is used when the resource failed validation or NGINX failed to reload the corresponding config.
 	StateInvalid = "Invalid"
+
+	// HttpProtocol defines a constant for the HTTP protocol in GlobalConfinguration.
+	HttpProtocol = "HTTP"
 )
 
 // +genclient
@@ -36,19 +39,25 @@ type VirtualServer struct {
 
 // VirtualServerSpec is the spec of the VirtualServer resource.
 type VirtualServerSpec struct {
-	IngressClass   string            `json:"ingressClassName"`
-	Host           string            `json:"host"`
-	TLS            *TLS              `json:"tls"`
-	Gunzip         bool              `json:"gunzip"`
-	Policies       []PolicyReference `json:"policies"`
-	Upstreams      []Upstream        `json:"upstreams"`
-	Routes         []Route           `json:"routes"`
-	HTTPSnippets   string            `json:"http-snippets"`
-	ServerSnippets string            `json:"server-snippets"`
-	Dos            string            `json:"dos"`
-	ExternalDNS    ExternalDNS       `json:"externalDNS"`
+	IngressClass   string                  `json:"ingressClassName"`
+	Listeners      []VirtualServerListener `json:"listeners"`
+	Host           string                  `json:"host"`
+	TLS            *TLS                    `json:"tls"`
+	Gunzip         bool                    `json:"gunzip"`
+	Policies       []PolicyReference       `json:"policies"`
+	Upstreams      []Upstream              `json:"upstreams"`
+	Routes         []Route                 `json:"routes"`
+	HTTPSnippets   string                  `json:"http-snippets"`
+	ServerSnippets string                  `json:"server-snippets"`
+	Dos            string                  `json:"dos"`
+	ExternalDNS    ExternalDNS             `json:"externalDNS"`
 	// InternalRoute allows for the configuration of internal routing.
 	InternalRoute bool `json:"internalRoute"`
+}
+
+// VirtualServerListener is the listener that
+type VirtualServerListener struct {
+	Name string `json:"name"`
 }
 
 // ExternalDNS defines externaldns sub-resource of a virtual server.

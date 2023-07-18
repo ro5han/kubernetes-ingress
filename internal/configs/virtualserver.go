@@ -76,6 +76,7 @@ type PodInfo struct {
 // VirtualServerEx holds a VirtualServer along with the resources that are referenced in this VirtualServer.
 type VirtualServerEx struct {
 	VirtualServer       *conf_v1.VirtualServer
+	Listeners           []*version2.Listener
 	Endpoints           map[string][]string
 	VirtualServerRoutes []*conf_v1.VirtualServerRoute
 	ExternalNameSvcs    map[string]bool
@@ -86,6 +87,14 @@ type VirtualServerEx struct {
 	LogConfRefs         map[string]*unstructured.Unstructured
 	DosProtectedRefs    map[string]*unstructured.Unstructured
 	DosProtectedEx      map[string]*DosEx
+}
+
+// VirtualServerListener holds the data that defines a custom listener for a VirtualServer.
+type VirtualServerListener struct {
+	Name     string
+	Protocol string
+	Port     int
+	Ssl      bool
 }
 
 func (vsx *VirtualServerEx) String() string {
@@ -685,6 +694,7 @@ func (vsc *virtualServerConfigurator) GenerateVirtualServerConfig(
 		Server: version2.Server{
 			ServerName:                vsEx.VirtualServer.Spec.Host,
 			Gunzip:                    vsEx.VirtualServer.Spec.Gunzip,
+			Listeners:                 vsEx.Listeners,
 			StatusZone:                vsEx.VirtualServer.Spec.Host,
 			ProxyProtocol:             vsc.cfgParams.ProxyProtocol,
 			SSL:                       sslConfig,

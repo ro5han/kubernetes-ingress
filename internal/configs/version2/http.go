@@ -82,6 +82,7 @@ type Server struct {
 	VSName                    string
 	DisableIPV6               bool
 	Gunzip                    bool
+	Listeners                 []*Listener
 }
 
 // SSL defines SSL configuration for a server.
@@ -196,6 +197,13 @@ type Location struct {
 	VSRName                  string
 	VSRNamespace             string
 	GRPCPass                 string
+}
+
+type Listener struct {
+	Name     string
+	Protocol string
+	Port     int
+	Ssl      bool
 }
 
 // ReturnLocation defines a location for returning a fixed response.

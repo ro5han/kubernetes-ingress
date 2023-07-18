@@ -131,7 +131,7 @@ func validateListenerName(name string, fieldPath *field.Path) field.ErrorList {
 
 func validateListenerProtocol(protocol string, fieldPath *field.Path) field.ErrorList {
 	switch protocol {
-	case "TCP", "UDP":
+	case "TCP", "UDP", "HTTP":
 		return nil
 	default:
 		return field.ErrorList{field.Invalid(fieldPath, protocol, "must specify protocol. Accepted values: TCP, UDP.")}
