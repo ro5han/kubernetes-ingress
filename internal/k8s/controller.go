@@ -834,7 +834,7 @@ func (lbc *LoadBalancerController) createExtendedResources(resources []Resource)
 		switch impl := r.(type) {
 		case *VirtualServerConfiguration:
 			vs := impl.VirtualServer
-			vsEx := lbc.createVirtualServerEx(vs, impl.VirtualServerRoutes)
+			vsEx := lbc.createVirtualServerEx(vs, impl.VirtualServerRoutes, impl.Listeners)
 			result.VirtualServerExes = append(result.VirtualServerExes, vsEx)
 		case *IngressConfiguration:
 
@@ -1517,7 +1517,7 @@ func (lbc *LoadBalancerController) processChanges(changes []ResourceChange) {
 			switch impl := c.Resource.(type) {
 			case *VirtualServerConfiguration:
 				// TODO add list of listeners to this function.
-				vsEx := lbc.createVirtualServerEx(impl.VirtualServer, impl.VirtualServerRoutes)
+				vsEx := lbc.createVirtualServerEx(impl.VirtualServer, impl.VirtualServerRoutes, impl.Listeners)
 
 				warnings, addOrUpdateErr := lbc.configurator.AddOrUpdateVirtualServer(vsEx)
 				lbc.updateVirtualServerStatusAndEvents(impl, warnings, addOrUpdateErr)
@@ -2921,29 +2921,22 @@ func (lbc *LoadBalancerController) getAppProtectPolicy(ing *networking.Ingress) 
 }
 
 func (lbc *LoadBalancerController) createVirtualServerEx(virtualServer *conf_v1.VirtualServer,
-	virtualServerRoutes []*conf_v1.VirtualServerRoute) *configs.VirtualServerEx {
+	virtualServerRoutes []*conf_v1.VirtualServerRoute,
+	listeners []*version2.Listener) *configs.VirtualServerEx {
 	virtualServerEx := configs.VirtualServerEx{
 		VirtualServer:  virtualServer,
-		Listeners:      make([]*version2.Listener, 0),
+		Listeners:      listeners,
 		SecretRefs:     make(map[string]*secrets.SecretReference),
 		ApPolRefs:      make(map[string]*unstructured.Unstructured),
 		LogConfRefs:    make(map[string]*unstructured.Unstructured),
 		DosProtectedEx: make(map[string]*configs.DosEx),
 	}
 
-	vsConfigKey := fmt.Sprintf("%s/%s", virtualServer.Namespace, virtualServerEx.VirtualServer.Name)
-
-	if vsc, exists := lbc.configuration.vsConfigs[vsConfigKey]; exists {
-		for _, listener := range vsc.Listeners {
-			virtualServerListener := &version2.Listener{
-				Name:     listener.Name,
-				Port:     listener.Port,
-				Protocol: listener.Protocol,
-				Ssl:      listener.Ssl,
-			}
-			virtualServerEx.Listeners = append(virtualServerEx.Listeners, virtualServerListener)
-		}
-	}
+	//vsConfigKey := fmt.Sprintf("%s/%s", virtualServer.Namespace, virtualServerEx.VirtualServer.Name)
+	//
+	//if vsc, exists := lbc.configuration.vsConfigs[vsConfigKey]; exists {
+	//	virtualServerEx.Listeners = append(virtualServerEx.Listeners, vsc.Listeners...)
+	//}
 
 	if virtualServer.Spec.TLS != nil && virtualServer.Spec.TLS.Secret != "" {
 		secretKey := virtualServer.Namespace + "/" + virtualServer.Spec.TLS.Secret

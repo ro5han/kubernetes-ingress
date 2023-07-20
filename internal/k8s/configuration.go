@@ -2,6 +2,7 @@ package k8s
 
 import (
 	"fmt"
+	"github.com/nginxinc/kubernetes-ingress/internal/configs/version2"
 	"reflect"
 	"sort"
 	"strings"
@@ -199,15 +200,7 @@ type VirtualServerConfiguration struct {
 	VirtualServer       *conf_v1.VirtualServer
 	VirtualServerRoutes []*conf_v1.VirtualServerRoute
 	Warnings            []string
-	Listeners           []*VirtualServerListener
-}
-
-// VirtualServerListener holds the data that defines a custom listener for a VirtualServer.
-type VirtualServerListener struct {
-	Name     string
-	Protocol string
-	Port     int
-	Ssl      bool
+	Listeners           []*version2.Listener
 }
 
 // NewVirtualServerConfiguration creates a VirtualServerConfiguration.
@@ -336,7 +329,7 @@ type TransportServerMetrics struct {
 type Configuration struct {
 	hosts       map[string]Resource
 	listeners   map[string]*TransportServerConfiguration
-	vsListeners map[string][]*VirtualServerListener
+	vsListeners map[string][]*version2.Listener
 	vsConfigs   map[string]*VirtualServerConfiguration
 
 	// only valid resources with the matching IngressClass are stored
@@ -393,7 +386,7 @@ func NewConfiguration(
 	return &Configuration{
 		hosts:                        make(map[string]Resource),
 		listeners:                    make(map[string]*TransportServerConfiguration),
-		vsListeners:                  make(map[string][]*VirtualServerListener),
+		vsListeners:                  make(map[string][]*version2.Listener),
 		vsConfigs:                    make(map[string]*VirtualServerConfiguration),
 		ingresses:                    make(map[string]*networking.Ingress),
 		virtualServers:               make(map[string]*conf_v1.VirtualServer),
@@ -856,7 +849,7 @@ func (c *Configuration) buildVSConfigsAndListeners() (incomingVSConfigsAndListen
 			for _, vsListener := range vs.Spec.Listeners {
 				if vsListener.Name == gcListener.Name {
 					if gcListener.Protocol == conf_v1.HttpProtocol {
-						virtualServerListener := &VirtualServerListener{
+						virtualServerListener := &version2.Listener{
 							Name:     gcListener.Name,
 							Port:     gcListener.Port,
 							Protocol: gcListener.Protocol,
@@ -1330,9 +1323,9 @@ func createResourceChangesForVSListeners(
 	removedVSConfigs map[string]*VirtualServerConfiguration,
 	addedVSConfigs map[string]*VirtualServerConfiguration,
 	updatedVSConfigs map[string]*VirtualServerConfiguration,
-	removedVSListeners map[string][]*VirtualServerListener,
-	addedVSListeners map[string][]*VirtualServerListener,
-	updatedVSListeners map[string][]*VirtualServerListener) []ResourceChange {
+	removedVSListeners map[string][]*version2.Listener,
+	addedVSListeners map[string][]*version2.Listener,
+	updatedVSListeners map[string][]*version2.Listener) []ResourceChange {
 
 	var changes []ResourceChange
 	var deleteChanges []ResourceChange
@@ -1842,24 +1835,24 @@ func detectChangesInVSListeners(
 	map[string]*VirtualServerConfiguration,
 	map[string]*VirtualServerConfiguration,
 	map[string]*VirtualServerConfiguration,
-	map[string][]*VirtualServerListener,
-	map[string][]*VirtualServerListener,
-	map[string][]*VirtualServerListener) {
+	map[string][]*version2.Listener,
+	map[string][]*version2.Listener,
+	map[string][]*version2.Listener) {
 
 	removedVSConfigs := make(map[string]*VirtualServerConfiguration)
 	addedVSConfigs := make(map[string]*VirtualServerConfiguration)
 	updatedVSConfigs := make(map[string]*VirtualServerConfiguration)
 
-	removedVSListeners := make(map[string][]*VirtualServerListener)
-	addedVSListeners := make(map[string][]*VirtualServerListener)
-	updatedVSListeners := make(map[string][]*VirtualServerListener)
+	removedVSListeners := make(map[string][]*version2.Listener)
+	addedVSListeners := make(map[string][]*version2.Listener)
+	updatedVSListeners := make(map[string][]*version2.Listener)
 
 	// Check for removed VS Configs
 	for _, key := range getSortedVirtualServerConfigurationKeys(currentVSConfigsAndListeners) {
 		if _, exists := incomingVSConfigsAndListeners[key]; !exists {
 			removedVSConfigs[key] = currentVSConfigsAndListeners[key]
 		} else {
-			removedListeners := make([]*VirtualServerListener, 0)
+			removedListeners := make([]*version2.Listener, 0)
 			newListeners := incomingVSConfigsAndListeners[key].Listeners
 			currentListeners := currentVSConfigsAndListeners[key].Listeners
 
@@ -1883,7 +1876,7 @@ func detectChangesInVSListeners(
 		if _, exists := currentVSConfigsAndListeners[key]; !exists {
 			addedVSConfigs[key] = incomingVSConfigsAndListeners[key]
 		} else {
-			addedListeners := make([]*VirtualServerListener, 0)
+			addedListeners := make([]*version2.Listener, 0)
 			newListeners := incomingVSConfigsAndListeners[key].Listeners
 			currentListeners := currentVSConfigsAndListeners[key].Listeners
 
@@ -1917,18 +1910,6 @@ func detectChangesInVSListeners(
 	//}
 
 	return removedVSConfigs, addedVSConfigs, updatedVSConfigs, removedVSListeners, addedVSListeners, updatedVSListeners
-}
-
-func getSortedVirtualServerListenerKeys(m map[string][]*VirtualServerListener) []string {
-	var keys []string
-
-	for k := range m {
-		keys = append(keys, k)
-	}
-
-	sort.Strings(keys)
-
-	return keys
 }
 
 func getSortedVirtualServerConfigurationKeys(m map[string]*VirtualServerConfiguration) []string {
