@@ -503,11 +503,11 @@ func (c *Configuration) AddOrUpdateVirtualServer(vs *conf_v1.VirtualServer) ([]R
 	changes, problems := c.rebuildHosts()
 
 	// Might only need nil check here.
-	if vs.Spec.Listeners != nil && len(vs.Spec.Listeners) > 0 {
-		listenerChanges, listenerProblems := c.rebuildVSListener()
-		changes = append(changes, listenerChanges...)
-		problems = append(problems, listenerProblems...)
-	}
+	//if vs.Spec.Listeners != nil && len(vs.Spec.Listeners) > 0 {
+	listenerChanges, listenerProblems := c.rebuildVSListener()
+	changes = append(changes, listenerChanges...)
+	problems = append(problems, listenerProblems...)
+	//}
 
 	if validationError != nil {
 		// If the invalid resource has an active host, rebuildHosts will create a change
@@ -616,6 +616,10 @@ func (c *Configuration) AddOrUpdateGlobalConfiguration(gc *conf_v1alpha1.GlobalC
 	}
 
 	changes, problems := c.rebuildListeners()
+
+	vsListenerChanges, vsListenerProblems := c.rebuildVSListener()
+	changes = append(changes, vsListenerChanges...)
+	problems = append(problems, vsListenerProblems...)
 
 	return changes, problems, validationErr
 }

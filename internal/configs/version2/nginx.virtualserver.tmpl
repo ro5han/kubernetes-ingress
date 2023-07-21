@@ -49,8 +49,8 @@ server {
     {{ if not $listener.Ssl }}
     listen {{ $listener.Port }}{{ if $s.ProxyProtocol }} proxy_protocol{{ end }};
     {{ if not $s.DisableIPV6 }}listen [::]:{{ $listener.Port }}{{ if $s.ProxyProtocol }} proxy_protocol{{ end }};{{ end }}
-    {{- end }}
-        {{- end }}
+    {{ end }}
+        {{ end }}
 
     server_name {{ $s.ServerName }};
 
@@ -73,9 +73,9 @@ server {
         {{ range $listener := $s.Listeners }}
     {{ if $listener.Ssl }}
     listen {{ $listener.Port }} ssl{{ if $s.ProxyProtocol }} proxy_protocol{{ end }};
-    {{ if not $s.DisableIPV6 }} listen [::]:{{ $listener.Port }} ssl{{- end }};
-    {{- end }}
-        {{- end }}
+    {{ if not $s.DisableIPV6 }}listen [::]:{{ $listener.Port }} ssl{{ end }};
+    {{ end }}
+        {{ end }}
 
         {{ if $ssl.RejectHandshake }}
     ssl_reject_handshake on;

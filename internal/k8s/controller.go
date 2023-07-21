@@ -834,6 +834,7 @@ func (lbc *LoadBalancerController) createExtendedResources(resources []Resource)
 		switch impl := r.(type) {
 		case *VirtualServerConfiguration:
 			vs := impl.VirtualServer
+			fmt.Printf("createExtendedResources()\n")
 			vsEx := lbc.createVirtualServerEx(vs, impl.VirtualServerRoutes, impl.Listeners)
 			result.VirtualServerExes = append(result.VirtualServerExes, vsEx)
 		case *IngressConfiguration:
@@ -1517,6 +1518,7 @@ func (lbc *LoadBalancerController) processChanges(changes []ResourceChange) {
 			switch impl := c.Resource.(type) {
 			case *VirtualServerConfiguration:
 				// TODO add list of listeners to this function.
+				fmt.Printf("processChanges()\n")
 				vsEx := lbc.createVirtualServerEx(impl.VirtualServer, impl.VirtualServerRoutes, impl.Listeners)
 
 				warnings, addOrUpdateErr := lbc.configurator.AddOrUpdateVirtualServer(vsEx)
