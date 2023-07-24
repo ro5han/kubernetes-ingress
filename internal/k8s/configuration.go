@@ -255,6 +255,10 @@ func (vsc *VirtualServerConfiguration) IsEqual(resource Resource) bool {
 		}
 	}
 
+	if !reflect.DeepEqual(&vsc.Listeners, &vsConfig.Listeners) {
+		return false
+	}
+
 	return true
 }
 
@@ -486,6 +490,9 @@ func (c *Configuration) AddOrUpdateVirtualServer(vs *conf_v1.VirtualServer) ([]R
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
+	var changes []ResourceChange
+	var problems []ConfigurationProblem
+
 	key := getResourceKey(&vs.ObjectMeta)
 	var validationError error
 
@@ -500,14 +507,16 @@ func (c *Configuration) AddOrUpdateVirtualServer(vs *conf_v1.VirtualServer) ([]R
 		}
 	}
 
-	changes, problems := c.rebuildHosts()
-
 	// Might only need nil check here.
 	//if vs.Spec.Listeners != nil && len(vs.Spec.Listeners) > 0 {
 	listenerChanges, listenerProblems := c.rebuildVSListener()
 	changes = append(changes, listenerChanges...)
 	problems = append(problems, listenerProblems...)
 	//}
+
+	hostChanges, hostProblems := c.rebuildHosts()
+	changes = append(changes, hostChanges...)
+	problems = append(problems, hostProblems...)
 
 	if validationError != nil {
 		// If the invalid resource has an active host, rebuildHosts will create a change
@@ -842,12 +851,13 @@ func (c *Configuration) buildVSConfigsAndListeners() (incomingVSConfigsAndListen
 	incomingVSConfigsAndListeners = make(map[string]*VirtualServerConfiguration)
 
 	for key, vs := range c.virtualServers {
-		if c.globalConfiguration == nil {
-			continue
-		}
 
 		vsrs, warnings := c.buildVirtualServerRoutes(vs)
 		vsc := NewVirtualServerConfiguration(vs, vsrs, warnings)
+
+		if c.globalConfiguration == nil {
+			continue
+		}
 
 		for _, gcListener := range c.globalConfiguration.Spec.Listeners {
 			for _, vsListener := range vs.Spec.Listeners {
@@ -1368,6 +1378,14 @@ func createResourceChangesForVSListeners(
 			Resource: incomingVSConfigsAndListeners[key],
 		}
 		changes = append(changes, addedVSListenerChange)
+	}
+
+	for key := range updatedVSConfigs {
+		updateVSConfigChange := ResourceChange{
+			Op:       AddOrUpdate,
+			Resource: currenVSConfigsAndListeners[key],
+		}
+		changes = append(changes, updateVSConfigChange)
 	}
 
 	return append(deleteChanges, changes...)
@@ -1901,17 +1919,16 @@ func detectChangesInVSListeners(
 	}
 
 	// Check for updated listeners.
+	for _, key := range getSortedVirtualServerConfigurationKeys(incomingVSConfigsAndListeners) {
+		currentVSResource, exists := currentVSConfigsAndListeners[key]
+		if !exists {
+			continue
+		}
 
-	//for _, key := range getSortedVirtualServerConfigurationKeys(newVSConfigs) {
-	//	oldR, exists := currentVSConfigsAndListeners[key]
-	//	if !exists {
-	//		continue
-	//	}
-	//
-	//	if !oldR.IsEqual(newVSConfigs[key]) {
-	//		updatedListenersMap = append(updatedListenersMap, key)
-	//	}
-	//}
+		if !currentVSResource.IsEqual(incomingVSConfigsAndListeners[key]) {
+			updatedVSConfigs[key] = currentVSResource
+		}
+	}
 
 	return removedVSConfigs, addedVSConfigs, updatedVSConfigs, removedVSListeners, addedVSListeners, updatedVSListeners
 }

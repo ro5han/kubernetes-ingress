@@ -834,8 +834,9 @@ func (lbc *LoadBalancerController) createExtendedResources(resources []Resource)
 		switch impl := r.(type) {
 		case *VirtualServerConfiguration:
 			vs := impl.VirtualServer
+			// -- DEBUGGING --
 			fmt.Printf("createExtendedResources()\n")
-			vsEx := lbc.createVirtualServerEx(vs, impl.VirtualServerRoutes, impl.Listeners)
+			vsEx := lbc.createVirtualServerEx(vs, impl.VirtualServerRoutes)
 			result.VirtualServerExes = append(result.VirtualServerExes, vsEx)
 		case *IngressConfiguration:
 
@@ -1517,9 +1518,9 @@ func (lbc *LoadBalancerController) processChanges(changes []ResourceChange) {
 		if c.Op == AddOrUpdate {
 			switch impl := c.Resource.(type) {
 			case *VirtualServerConfiguration:
-				// TODO add list of listeners to this function.
+				// -- DEBUGGING --
 				fmt.Printf("processChanges()\n")
-				vsEx := lbc.createVirtualServerEx(impl.VirtualServer, impl.VirtualServerRoutes, impl.Listeners)
+				vsEx := lbc.createVirtualServerEx(impl.VirtualServer, impl.VirtualServerRoutes)
 
 				warnings, addOrUpdateErr := lbc.configurator.AddOrUpdateVirtualServer(vsEx)
 				lbc.updateVirtualServerStatusAndEvents(impl, warnings, addOrUpdateErr)
@@ -1618,30 +1619,57 @@ func (lbc *LoadBalancerController) processChanges(changes []ResourceChange) {
 // Such changes need to be processed at once to prevent any inconsistencies in the generated NGINX config.
 func (lbc *LoadBalancerController) processChangesFromGlobalConfiguration(changes []ResourceChange) error {
 	var updatedTSExes []*configs.TransportServerEx
-	var deletedKeys []string
+	var updatedVSExes []*configs.VirtualServerEx
+	var deletedTSKeys []string
+	var deletedVSKeys []string
 
 	var updatedResources []Resource
 
 	for _, c := range changes {
-		tsConfig := c.Resource.(*TransportServerConfiguration)
+		switch impl := c.Resource.(type) {
+		case *VirtualServerConfiguration:
+			if c.Op == AddOrUpdate {
+				// -- DEBUGGING --
+				fmt.Printf("processChangesFromGlobalConfiguration()\n")
+				vsEx := lbc.createVirtualServerEx(impl.VirtualServer, impl.VirtualServerRoutes)
 
-		if c.Op == AddOrUpdate {
-			tsEx := lbc.createTransportServerEx(tsConfig.TransportServer, tsConfig.ListenerPort)
+				updatedVSExes = append(updatedVSExes, vsEx)
+				updatedResources = append(updatedResources, impl)
+			} else if c.Op == Delete {
+				key := getResourceKey(&impl.VirtualServer.ObjectMeta)
 
-			updatedTSExes = append(updatedTSExes, tsEx)
-			updatedResources = append(updatedResources, tsConfig)
-		} else if c.Op == Delete {
-			key := getResourceKey(&tsConfig.TransportServer.ObjectMeta)
+				deletedVSKeys = append(deletedVSKeys, key)
+			}
+		case *TransportServerConfiguration:
+			if c.Op == AddOrUpdate {
+				tsEx := lbc.createTransportServerEx(impl.TransportServer, impl.ListenerPort)
 
-			deletedKeys = append(deletedKeys, key)
+				updatedTSExes = append(updatedTSExes, tsEx)
+				updatedResources = append(updatedResources, impl)
+			} else if c.Op == Delete {
+				key := getResourceKey(&impl.TransportServer.ObjectMeta)
+
+				deletedTSKeys = append(deletedTSKeys, key)
+			}
 		}
 	}
 
 	var updateErr error
-	updateErrs := lbc.configurator.UpdateTransportServers(updatedTSExes, deletedKeys)
 
-	if len(updateErrs) > 0 {
-		updateErr = fmt.Errorf("errors received from updating TransportServers after GlobalConfiguration change: %v", updateErrs)
+	if len(updatedTSExes) > 0 || len(deletedTSKeys) > 0 {
+		tsUpdateErrs := lbc.configurator.UpdateTransportServers(updatedTSExes, deletedTSKeys)
+
+		if len(tsUpdateErrs) > 0 {
+			updateErr = fmt.Errorf("errors received from updating TransportServers after GlobalConfiguration change: %v", tsUpdateErrs)
+		}
+	}
+
+	if len(updatedVSExes) > 0 || len(deletedVSKeys) > 0 {
+		vsUpdateErrs := lbc.configurator.UpdateVirtualServers(updatedVSExes, deletedVSKeys)
+
+		if len(vsUpdateErrs) > 0 {
+			updateErr = fmt.Errorf("errors received from updating VirtualSrvers after GlobalConfiguration change: %v", vsUpdateErrs)
+		}
 	}
 
 	lbc.updateResourcesStatusAndEvents(updatedResources, configs.Warnings{}, updateErr)
@@ -2923,22 +2951,33 @@ func (lbc *LoadBalancerController) getAppProtectPolicy(ing *networking.Ingress) 
 }
 
 func (lbc *LoadBalancerController) createVirtualServerEx(virtualServer *conf_v1.VirtualServer,
-	virtualServerRoutes []*conf_v1.VirtualServerRoute,
-	listeners []*version2.Listener) *configs.VirtualServerEx {
+	virtualServerRoutes []*conf_v1.VirtualServerRoute) *configs.VirtualServerEx {
 	virtualServerEx := configs.VirtualServerEx{
 		VirtualServer:  virtualServer,
-		Listeners:      listeners,
+		Listeners:      make([]*version2.Listener, 0),
 		SecretRefs:     make(map[string]*secrets.SecretReference),
 		ApPolRefs:      make(map[string]*unstructured.Unstructured),
 		LogConfRefs:    make(map[string]*unstructured.Unstructured),
 		DosProtectedEx: make(map[string]*configs.DosEx),
 	}
 
-	//vsConfigKey := fmt.Sprintf("%s/%s", virtualServer.Namespace, virtualServerEx.VirtualServer.Name)
-	//
-	//if vsc, exists := lbc.configuration.vsConfigs[vsConfigKey]; exists {
-	//	virtualServerEx.Listeners = append(virtualServerEx.Listeners, vsc.Listeners...)
-	//}
+	key := fmt.Sprintf("%s/%s", virtualServer.Namespace, virtualServer.Name)
+
+	if vsConfig, exists := lbc.configuration.vsConfigs[key]; exists {
+		if vsConfig.Listeners != nil {
+			virtualServerEx.Listeners = vsConfig.Listeners
+		}
+	}
+
+	// -- DEBUGGING --
+	fmt.Printf("-- HOST: %s \n", virtualServerEx.VirtualServer.Spec.Host)
+	for _, listener := range virtualServerEx.Listeners {
+		if listener.Ssl {
+			fmt.Printf("-- HTTPS vsEx Listeners: %v --\n", listener)
+		} else {
+			fmt.Printf("-- HTTP vsEx Listeners: %v --\n", listener)
+		}
+	}
 
 	if virtualServer.Spec.TLS != nil && virtualServer.Spec.TLS.Secret != "" {
 		secretKey := virtualServer.Namespace + "/" + virtualServer.Spec.TLS.Secret
