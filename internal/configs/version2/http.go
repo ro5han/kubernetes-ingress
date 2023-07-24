@@ -50,6 +50,9 @@ type UpstreamServer struct {
 type Server struct {
 	ServerName                string
 	StatusZone                string
+	CustomListeners           bool
+	HttpPort                  int
+	HttpsPort                 int
 	ProxyProtocol             bool
 	SSL                       *SSL
 	ServerTokens              string

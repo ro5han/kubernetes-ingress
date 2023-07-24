@@ -76,6 +76,8 @@ type PodInfo struct {
 // VirtualServerEx holds a VirtualServer along with the resources that are referenced in this VirtualServer.
 type VirtualServerEx struct {
 	VirtualServer       *conf_v1.VirtualServer
+	HttpPort            int
+	HttpsPort           int
 	Endpoints           map[string][]string
 	VirtualServerRoutes []*conf_v1.VirtualServerRoute
 	ExternalNameSvcs    map[string]bool
@@ -309,6 +311,12 @@ func (vsc *virtualServerConfigurator) GenerateVirtualServerConfig(
 	dosResources map[string]*appProtectDosResource,
 ) (version2.VirtualServerConfig, Warnings) {
 	vsc.clearWarnings()
+
+	useCustomListeners := false
+
+	if vsEx.HttpPort != 0 || vsEx.HttpsPort != 0 {
+		useCustomListeners = true
+	}
 
 	sslConfig := vsc.generateSSLConfig(vsEx.VirtualServer, vsEx.VirtualServer.Spec.TLS, vsEx.VirtualServer.Namespace, vsEx.SecretRefs, vsc.cfgParams)
 	tlsRedirectConfig := generateTLSRedirectConfig(vsEx.VirtualServer.Spec.TLS)
@@ -686,6 +694,9 @@ func (vsc *virtualServerConfigurator) GenerateVirtualServerConfig(
 			ServerName:                vsEx.VirtualServer.Spec.Host,
 			Gunzip:                    vsEx.VirtualServer.Spec.Gunzip,
 			StatusZone:                vsEx.VirtualServer.Spec.Host,
+			HttpPort:                  vsEx.HttpPort,
+			HttpsPort:                 vsEx.HttpsPort,
+			CustomListeners:           useCustomListeners,
 			ProxyProtocol:             vsc.cfgParams.ProxyProtocol,
 			SSL:                       sslConfig,
 			ServerTokens:              vsc.cfgParams.ServerTokens,

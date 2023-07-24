@@ -88,14 +88,6 @@ spec:
                       type: string
                 gunzip:
                   type: boolean
-                listener:
-                  description: Defines a custom HTTP and/or HTTPS listener
-                  type: object
-                  properties:
-                    http:
-                      type: string
-                    https:
-                      type: string
                 host:
                   type: string
                 http-snippets:
@@ -105,6 +97,13 @@ spec:
                 internalRoute:
                   description: InternalRoute allows for the configuration of internal routing.
                   type: boolean
+                listener:
+                  type: object
+                  properties:
+                    http:
+                      type: string
+                    https:
+                      type: string
                 policies:
                   type: array
                   items:

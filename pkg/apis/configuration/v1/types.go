@@ -11,6 +11,8 @@ const (
 	StateValid = "Valid"
 	// StateInvalid is used when the resource failed validation or NGINX failed to reload the corresponding config.
 	StateInvalid = "Invalid"
+	// HttpProtocol defines a constant for the HTTP protocol in GlobalConfinguration.
+	HttpProtocol = "HTTP"
 )
 
 // +genclient
@@ -38,7 +40,7 @@ type VirtualServer struct {
 type VirtualServerSpec struct {
 	IngressClass   string            `json:"ingressClassName"`
 	Host           string            `json:"host"`
-	Listener       Listener          `json:"listener"`
+	Listener       *Listener         `json:"listener"`
 	TLS            *TLS              `json:"tls"`
 	Gunzip         bool              `json:"gunzip"`
 	Policies       []PolicyReference `json:"policies"`

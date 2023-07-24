@@ -97,6 +97,13 @@ spec:
                 internalRoute:
                   description: InternalRoute allows for the configuration of internal routing.
                   type: boolean
+                listener:
+                  type: object
+                  properties:
+                    http:
+                      type: string
+                    https:
+                      type: string
                 policies:
                   type: array
                   items:

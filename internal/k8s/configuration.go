@@ -199,6 +199,8 @@ type VirtualServerConfiguration struct {
 	VirtualServer       *conf_v1.VirtualServer
 	VirtualServerRoutes []*conf_v1.VirtualServerRoute
 	Warnings            []string
+	HttpPort            int
+	HttpsPort           int
 }
 
 // NewVirtualServerConfiguration creates a VirtualServerConfiguration.
@@ -251,6 +253,14 @@ func (vsc *VirtualServerConfiguration) IsEqual(resource Resource) bool {
 		if !compareObjectMetas(&vsc.VirtualServerRoutes[i].ObjectMeta, &vsConfig.VirtualServerRoutes[i].ObjectMeta) {
 			return false
 		}
+	}
+
+	if vsc.HttpPort != vsConfig.HttpPort {
+		return false
+	}
+
+	if vsc.HttpsPort != vsConfig.HttpsPort {
+		return false
 	}
 
 	return true
@@ -325,8 +335,9 @@ type TransportServerMetrics struct {
 // The IC needs to ensure that at any point in time the NGINX config on the filesystem reflects the state
 // of the objects in the Configuration.
 type Configuration struct {
-	hosts     map[string]Resource
-	listeners map[string]*TransportServerConfiguration
+	hosts       map[string]Resource
+	listeners   map[string]*TransportServerConfiguration
+	vsListeners map[string]*VirtualServerConfiguration
 
 	// only valid resources with the matching IngressClass are stored
 	ingresses           map[string]*networking.Ingress
@@ -336,8 +347,9 @@ type Configuration struct {
 
 	globalConfiguration *conf_v1alpha1.GlobalConfiguration
 
-	hostProblems     map[string]ConfigurationProblem
-	listenerProblems map[string]ConfigurationProblem
+	hostProblems       map[string]ConfigurationProblem
+	listenerProblems   map[string]ConfigurationProblem
+	vsListenerProblems map[string]ConfigurationProblem
 
 	hasCorrectIngressClass       func(interface{}) bool
 	virtualServerValidator       *validation.VirtualServerValidator
@@ -382,6 +394,7 @@ func NewConfiguration(
 	return &Configuration{
 		hosts:                        make(map[string]Resource),
 		listeners:                    make(map[string]*TransportServerConfiguration),
+		vsListeners:                  make(map[string]*VirtualServerConfiguration),
 		ingresses:                    make(map[string]*networking.Ingress),
 		virtualServers:               make(map[string]*conf_v1.VirtualServer),
 		virtualServerRoutes:          make(map[string]*conf_v1.VirtualServerRoute),
@@ -480,6 +493,9 @@ func (c *Configuration) AddOrUpdateVirtualServer(vs *conf_v1.VirtualServer) ([]R
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
+	var changes []ResourceChange
+	var problems []ConfigurationProblem
+
 	key := getResourceKey(&vs.ObjectMeta)
 	var validationError error
 
@@ -494,7 +510,13 @@ func (c *Configuration) AddOrUpdateVirtualServer(vs *conf_v1.VirtualServer) ([]R
 		}
 	}
 
-	changes, problems := c.rebuildHosts()
+	listenerChanges, listenerProblems := c.rebuildVSListeners()
+	changes = append(changes, listenerChanges...)
+	problems = append(problems, listenerProblems...)
+
+	hostChanges, hostProblems := c.rebuildHosts()
+	changes = append(changes, hostChanges...)
+	problems = append(problems, hostProblems...)
 
 	if validationError != nil {
 		// If the invalid resource has an active host, rebuildHosts will create a change
@@ -595,6 +617,9 @@ func (c *Configuration) AddOrUpdateGlobalConfiguration(gc *conf_v1alpha1.GlobalC
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
+	var changes []ResourceChange
+	var problems []ConfigurationProblem
+
 	validationErr := c.globalConfigurationValidator.ValidateGlobalConfiguration(gc)
 	if validationErr != nil {
 		c.globalConfiguration = nil
@@ -602,7 +627,13 @@ func (c *Configuration) AddOrUpdateGlobalConfiguration(gc *conf_v1alpha1.GlobalC
 		c.globalConfiguration = gc
 	}
 
-	changes, problems := c.rebuildListeners()
+	tsListenerChanges, tsListenerProblems := c.rebuildListeners()
+	changes = append(changes, tsListenerChanges...)
+	problems = append(problems, tsListenerProblems...)
+
+	vsListenerChanges, vsListenerProblems := c.rebuildVSListeners()
+	changes = append(changes, vsListenerChanges...)
+	problems = append(problems, vsListenerProblems...)
 
 	return changes, problems, validationErr
 }
@@ -789,6 +820,190 @@ func (c *Configuration) buildListenersAndTSConfigurations() (newListeners map[st
 	}
 
 	return newListeners, newTSConfigs
+}
+
+func (c *Configuration) rebuildVSListeners() ([]ResourceChange, []ConfigurationProblem) {
+	incomingVSConfigsAndListeners := c.buildVSConfigsAndListeners()
+
+	removedVSConfigs, addedVSConfigs, updatedVSConfigs :=
+		detectChangesInVSListeners(c.vsListeners, incomingVSConfigsAndListeners)
+
+	changes := createResourceChangesForVSListeners(
+		c.vsListeners,
+		incomingVSConfigsAndListeners,
+		removedVSConfigs,
+		addedVSConfigs,
+		updatedVSConfigs)
+
+	c.vsListeners = incomingVSConfigsAndListeners
+
+	changes = squashResourceChanges(changes)
+
+	// Note that the change will not refer to the latest version, if the resource is being removed.
+	// However, referring to the latest version is necessary so that the resource latest Warnings are reported and not lost.
+	// So here we make sure that changes always refer to the latest version of resources.
+	for i := range changes {
+		key := changes[i].Resource.GetKeyWithKind()
+		if r, exists := incomingVSConfigsAndListeners[key]; exists {
+			changes[i].Resource = r
+		}
+	}
+
+	// TODO Add these as warnings instead.
+	newProblems := make(map[string]ConfigurationProblem)
+
+	c.addProblemsForVSListeners(incomingVSConfigsAndListeners, newProblems)
+
+	newOrUpdatedProblems := detectChangesInProblems(newProblems, c.vsListenerProblems)
+
+	c.vsListenerProblems = newProblems
+
+	return changes, newOrUpdatedProblems
+}
+
+func (c *Configuration) buildVSConfigsAndListeners() (incomingVSConfigs map[string]*VirtualServerConfiguration) {
+	incomingVSConfigs = make(map[string]*VirtualServerConfiguration)
+
+	for key, vs := range c.virtualServers {
+		vsrs, warnings := c.buildVirtualServerRoutes(vs)
+		vsc := NewVirtualServerConfiguration(vs, vsrs, warnings)
+
+		if c.globalConfiguration == nil {
+			continue
+		}
+
+		// Use defaults
+		if vs.Spec.Listener == nil {
+			incomingVSConfigs[key] = vsc
+			continue
+		}
+
+		for _, gcListener := range c.globalConfiguration.Spec.Listeners {
+			if gcListener.Protocol == conf_v1.HttpProtocol {
+				if vs.Spec.Listener.Http != "" {
+					if vs.Spec.Listener.Http == gcListener.Name && !gcListener.Ssl {
+						vsc.HttpPort = gcListener.Port
+					}
+				}
+
+				if vs.Spec.Listener.Https != "" {
+					if vs.Spec.Listener.Https == gcListener.Name && gcListener.Ssl {
+						vsc.HttpsPort = gcListener.Port
+					}
+				}
+			}
+		}
+		incomingVSConfigs[key] = vsc
+	}
+
+	return incomingVSConfigs
+}
+
+func detectChangesInVSListeners(
+	currentVSConfigsAndListeners map[string]*VirtualServerConfiguration,
+	incomingVSConfigsAndListeners map[string]*VirtualServerConfiguration) (
+	map[string]*VirtualServerConfiguration,
+	map[string]*VirtualServerConfiguration,
+	map[string]*VirtualServerConfiguration) {
+
+	removedVSConfigs := make(map[string]*VirtualServerConfiguration)
+	addedVSConfigs := make(map[string]*VirtualServerConfiguration)
+	updatedVSConfigs := make(map[string]*VirtualServerConfiguration)
+
+	// Check for removes VS Configs
+	for _, key := range getSortedVirtualServerConfigurationKeys(currentVSConfigsAndListeners) {
+		if _, exists := incomingVSConfigsAndListeners[key]; !exists {
+			removedVSConfigs[key] = currentVSConfigsAndListeners[key]
+		}
+	}
+
+	for _, key := range getSortedVirtualServerConfigurationKeys(incomingVSConfigsAndListeners) {
+		if _, exists := currentVSConfigsAndListeners[key]; !exists {
+			addedVSConfigs[key] = incomingVSConfigsAndListeners[key]
+		}
+	}
+
+	// Check for updated listeners.
+	for _, key := range getSortedVirtualServerConfigurationKeys(incomingVSConfigsAndListeners) {
+		currentVSResource, exists := currentVSConfigsAndListeners[key]
+		if !exists {
+			continue
+		}
+
+		if !currentVSResource.IsEqual(incomingVSConfigsAndListeners[key]) {
+			updatedVSConfigs[key] = currentVSResource
+		}
+	}
+
+	return removedVSConfigs, addedVSConfigs, updatedVSConfigs
+}
+
+func createResourceChangesForVSListeners(
+	currenVSConfigsAndListeners map[string]*VirtualServerConfiguration,
+	incomingVSConfigsAndListeners map[string]*VirtualServerConfiguration,
+	removedVSConfigs map[string]*VirtualServerConfiguration,
+	addedVSConfigs map[string]*VirtualServerConfiguration,
+	updatedVSConfigs map[string]*VirtualServerConfiguration) []ResourceChange {
+
+	var changes []ResourceChange
+	var deleteChanges []ResourceChange
+
+	// Create changes for removed VirtualServer configurations
+	for key := range removedVSConfigs {
+		removedVSConfigChange := ResourceChange{
+			Op:       Delete,
+			Resource: currenVSConfigsAndListeners[key],
+		}
+		deleteChanges = append(deleteChanges, removedVSConfigChange)
+	}
+
+	// Create changes for added VirtualServer configuration
+	for key := range addedVSConfigs {
+		addedVSConfigChange := ResourceChange{
+			Op:       AddOrUpdate,
+			Resource: incomingVSConfigsAndListeners[key],
+		}
+		changes = append(changes, addedVSConfigChange)
+	}
+
+	for key := range updatedVSConfigs {
+		updateVSConfigChange := ResourceChange{
+			Op:       AddOrUpdate,
+			Resource: currenVSConfigsAndListeners[key],
+		}
+		changes = append(changes, updateVSConfigChange)
+	}
+
+	return append(deleteChanges, changes...)
+}
+
+func (c *Configuration) addProblemsForVSListeners(vsConfigs map[string]*VirtualServerConfiguration, problems map[string]ConfigurationProblem) {
+	for _, vsc := range vsConfigs {
+		for _, gcListener := range c.globalConfiguration.Spec.Listeners {
+			if gcListener.Protocol == conf_v1.HttpProtocol {
+				if gcListener.Name == vsc.VirtualServer.Spec.Listener.Http && gcListener.Ssl {
+					p := ConfigurationProblem{
+						Object:  vsc.VirtualServer,
+						IsError: false,
+						Reason:  "Invalid",
+						Message: fmt.Sprintf("Cann't use listener %v in Spec.Listener.Http. %v has SSL enabled.", gcListener.Name, gcListener.Name),
+					}
+					problems[vsc.GetKeyWithKind()] = p
+					continue
+				}
+				if gcListener.Name == vsc.VirtualServer.Spec.Listener.Https && !gcListener.Ssl {
+					p := ConfigurationProblem{
+						Object:  vsc.VirtualServer,
+						IsError: false,
+						Reason:  "Invalid",
+						Message: fmt.Sprintf("Cann't use listener %v in Spec.Listener.Https. %v has SSL disabled.", gcListener.Name, gcListener.Name),
+					}
+					problems[vsc.GetKeyWithKind()] = p
+					continue
+				}
+			}
+		}
+	}
 }
 
 // GetResources returns all configuration resources.
@@ -1617,6 +1832,18 @@ func getSortedResourceKeys(m map[string]Resource) []string {
 }
 
 func getSortedTransportServerKeys(m map[string]*conf_v1alpha1.TransportServer) []string {
+	var keys []string
+
+	for k := range m {
+		keys = append(keys, k)
+	}
+
+	sort.Strings(keys)
+
+	return keys
+}
+
+func getSortedVirtualServerConfigurationKeys(m map[string]*VirtualServerConfiguration) []string {
 	var keys []string
 
 	for k := range m {
