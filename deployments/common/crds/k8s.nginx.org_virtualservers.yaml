@@ -88,6 +88,14 @@ spec:
                       type: string
                 gunzip:
                   type: boolean
+                listener:
+                  description: Defines a custom HTTP and/or HTTPS listener
+                  type: object
+                  properties:
+                    http:
+                      type: string
+                    https:
+                      type: string
                 host:
                   type: string
                 http-snippets:
