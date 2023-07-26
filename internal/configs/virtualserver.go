@@ -314,7 +314,7 @@ func (vsc *virtualServerConfigurator) GenerateVirtualServerConfig(
 
 	useCustomListeners := false
 
-	if vsEx.HttpPort != 0 || vsEx.HttpsPort != 0 {
+	if vsEx.VirtualServer.Spec.Listener != nil {
 		useCustomListeners = true
 	}
 

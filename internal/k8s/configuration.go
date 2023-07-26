@@ -553,6 +553,9 @@ func (c *Configuration) DeleteVirtualServer(key string) ([]ResourceChange, []Con
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
+	var changes []ResourceChange
+	var problems []ConfigurationProblem
+
 	_, exists := c.virtualServers[key]
 	if !exists {
 		return nil, nil
@@ -560,7 +563,15 @@ func (c *Configuration) DeleteVirtualServer(key string) ([]ResourceChange, []Con
 
 	delete(c.virtualServers, key)
 
-	return c.rebuildHosts()
+	hostChanges, hostProblems := c.rebuildHosts()
+	changes = append(changes, hostChanges...)
+	problems = append(problems, hostProblems...)
+
+	listenerChanges, listenerProblems := c.rebuildVSListeners()
+	changes = append(changes, listenerChanges...)
+	problems = append(problems, listenerProblems...)
+
+	return changes, problems
 }
 
 // AddOrUpdateVirtualServerRoute adds or updates the VirtualServerRoute.
@@ -643,8 +654,17 @@ func (c *Configuration) DeleteGlobalConfiguration() ([]ResourceChange, []Configu
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
+	var changes []ResourceChange
+	var problems []ConfigurationProblem
+
 	c.globalConfiguration = nil
-	changes, problems := c.rebuildListeners()
+	tsListenerChanges, tsListenerProblems := c.rebuildListeners()
+	changes = append(changes, tsListenerChanges...)
+	problems = append(problems, tsListenerProblems...)
+
+	vsListenerChanges, vsListenerProblems := c.rebuildVSListeners()
+	changes = append(changes, vsListenerChanges...)
+	problems = append(problems, vsListenerProblems...)
 
 	return changes, problems
 }
@@ -849,7 +869,6 @@ func (c *Configuration) rebuildVSListeners() ([]ResourceChange, []ConfigurationP
 		}
 	}
 
-	// TODO Add these as warnings instead.
 	newProblems := make(map[string]ConfigurationProblem)
 
 	c.addProblemsForVSListeners(incomingVSConfigsAndListeners, newProblems)
@@ -872,7 +891,6 @@ func (c *Configuration) buildVSConfigsAndListeners() (incomingVSConfigs map[stri
 			continue
 		}
 
-		// Use defaults
 		if vs.Spec.Listener == nil {
 			incomingVSConfigs[key] = vsc
 			continue
@@ -978,29 +996,85 @@ func createResourceChangesForVSListeners(
 }
 
 func (c *Configuration) addProblemsForVSListeners(vsConfigs map[string]*VirtualServerConfiguration, problems map[string]ConfigurationProblem) {
+	var httpListenerFound bool
+	var httpsListenerFound bool
 	for _, vsc := range vsConfigs {
-		for _, gcListener := range c.globalConfiguration.Spec.Listeners {
-			if gcListener.Protocol == conf_v1.HttpProtocol {
-				if gcListener.Name == vsc.VirtualServer.Spec.Listener.Http && gcListener.Ssl {
+		if vsc.VirtualServer.Spec.Listener != nil {
+			if c.globalConfiguration != nil {
+				for _, gcListener := range c.globalConfiguration.Spec.Listeners {
+					if gcListener.Protocol == conf_v1.HttpProtocol {
+						if gcListener.Name == vsc.VirtualServer.Spec.Listener.Http {
+							httpListenerFound = true
+							if gcListener.Ssl {
+								p := ConfigurationProblem{
+									Object:  vsc.VirtualServer,
+									IsError: false,
+									Reason:  "Invalid",
+									Message: fmt.Sprintf("Can't use listener %v in Spec.Listener.Http. %v has SSL enabled.",
+										gcListener.Name, gcListener.Name),
+								}
+								problems[vsc.GetKeyWithKind()] = p
+								continue
+							}
+						}
+						if gcListener.Name == vsc.VirtualServer.Spec.Listener.Https {
+							httpsListenerFound = true
+							if !gcListener.Ssl {
+								p := ConfigurationProblem{
+									Object:  vsc.VirtualServer,
+									IsError: false,
+									Reason:  "Invalid",
+									Message: fmt.Sprintf("Can't use listener %v in Spec.Listener.Https. %v has SSL disabled.",
+										gcListener.Name, gcListener.Name),
+								}
+								problems[vsc.GetKeyWithKind()] = p
+								continue
+							}
+						}
+					}
+				}
+				if !httpListenerFound {
 					p := ConfigurationProblem{
 						Object:  vsc.VirtualServer,
 						IsError: false,
 						Reason:  "Invalid",
-						Message: fmt.Sprintf("Cann't use listener %v in Spec.Listener.Http. %v has SSL enabled.", gcListener.Name, gcListener.Name),
+						Message: fmt.Sprintf("Listener %v not found in GlobalConfiguration",
+							vsc.VirtualServer.Spec.Listener.Http),
 					}
 					problems[vsc.GetKeyWithKind()] = p
 					continue
 				}
-				if gcListener.Name == vsc.VirtualServer.Spec.Listener.Https && !gcListener.Ssl {
+				if !httpsListenerFound {
 					p := ConfigurationProblem{
 						Object:  vsc.VirtualServer,
 						IsError: false,
 						Reason:  "Invalid",
-						Message: fmt.Sprintf("Cann't use listener %v in Spec.Listener.Https. %v has SSL disabled.", gcListener.Name, gcListener.Name),
+						Message: fmt.Sprintf("Listener %v not found in GlobalConfiguration",
+							vsc.VirtualServer.Spec.Listener.Https),
 					}
 					problems[vsc.GetKeyWithKind()] = p
 					continue
 				}
+				if !httpListenerFound && !httpsListenerFound {
+					p := ConfigurationProblem{
+						Object:  vsc.VirtualServer,
+						IsError: false,
+						Reason:  "Invalid",
+						Message: fmt.Sprintf("Listener %v and %v not found in GlobalConfiguration",
+							vsc.VirtualServer.Spec.Listener.Http, vsc.VirtualServer.Spec.Listener.Https),
+					}
+					problems[vsc.GetKeyWithKind()] = p
+					continue
+				}
+			} else {
+				p := ConfigurationProblem{
+					Object:  vsc.VirtualServer,
+					IsError: false,
+					Reason:  "Invalid",
+					Message: "Listener directive is defined but no GlobalConfiguration is deployed.",
+				}
+				problems[vsc.GetKeyWithKind()] = p
+				continue
 			}
 		}
 	}

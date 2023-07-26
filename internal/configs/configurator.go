@@ -1260,9 +1260,9 @@ func (cnf *Configurator) UpdateVirtualServers(updatedVSExes []*VirtualServerEx, 
 		}
 	}
 
-	if err := cnf.reload(nginx.ReloadForOtherUpdate); err != nil {
-		errList = append(errList, fmt.Errorf("error when updating VirtualServer: %w", err))
-	}
+	//if err := cnf.reload(nginx.ReloadForOtherUpdate); err != nil {
+	//	errList = append(errList, fmt.Errorf("error when updating VirtualServer: %w", err))
+	//}
 
 	return errList
 }
