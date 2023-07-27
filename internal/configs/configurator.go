@@ -1254,15 +1254,15 @@ func (cnf *Configurator) UpdateVirtualServers(updatedVSExes []*VirtualServerEx, 
 	}
 
 	for _, key := range deletedKeys {
-		err := cnf.DeleteVirtualServer(key, false)
+		err := cnf.DeleteVirtualServer(key, true)
 		if err != nil {
 			errList = append(errList, fmt.Errorf("error when removing VirtualServer %v: %w", key, err))
 		}
 	}
 
-	//if err := cnf.reload(nginx.ReloadForOtherUpdate); err != nil {
-	//	errList = append(errList, fmt.Errorf("error when updating VirtualServer: %w", err))
-	//}
+	if err := cnf.reload(nginx.ReloadForOtherUpdate); err != nil {
+		errList = append(errList, fmt.Errorf("error when updating VirtualServer: %w", err))
+	}
 
 	return errList
 }
