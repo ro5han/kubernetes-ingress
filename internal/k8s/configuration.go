@@ -255,23 +255,6 @@ func (vsc *VirtualServerConfiguration) IsEqual(resource Resource) bool {
 		}
 	}
 
-	//if vsConfig.VirtualServer.Spec.Listener != nil {
-	//	if vsc.VirtualServer.Spec.Listener.Http == vsConfig.VirtualServer.Spec.Listener.Http {
-	//		return false
-	//	}
-	//	if vsc.VirtualServer.Spec.Listener.Https == vsConfig.VirtualServer.Spec.Listener.Https {
-	//		return false
-	//	}
-	//}
-
-	//if vsc.HttpPort != vsConfig.HttpPort {
-	//	return false
-	//}
-	//
-	//if vsc.HttpsPort != vsConfig.HttpsPort {
-	//	return false
-	//}
-
 	return true
 }
 
@@ -844,19 +827,19 @@ func (c *Configuration) buildListenersAndTSConfigurations() (newListeners map[st
 }
 
 func (c *Configuration) rebuildVSListeners() ([]ResourceChange, []ConfigurationProblem) {
-	incomingVSConfigsAndListeners := c.buildVSConfigsAndListeners()
+	incomingVSConfig, incomingVSListeners := c.buildVSConfigsAndListeners()
 
 	removedVSConfigs, addedVSConfigs, updatedVSConfigs :=
-		detectChangesInVSListeners(c.vsListeners, incomingVSConfigsAndListeners)
+		detectChangesInVSListeners(c.vsListeners, incomingVSListeners)
 
 	changes := createResourceChangesForVSListeners(
 		c.vsListeners,
-		incomingVSConfigsAndListeners,
+		incomingVSListeners,
 		removedVSConfigs,
 		addedVSConfigs,
 		updatedVSConfigs)
 
-	c.vsListeners = incomingVSConfigsAndListeners
+	c.vsListeners = incomingVSListeners
 
 	changes = squashResourceChanges(changes)
 
@@ -865,14 +848,14 @@ func (c *Configuration) rebuildVSListeners() ([]ResourceChange, []ConfigurationP
 	// So here we make sure that changes always refer to the latest version of resources.
 	for i := range changes {
 		key := changes[i].Resource.GetKeyWithKind()
-		if r, exists := incomingVSConfigsAndListeners[key]; exists {
+		if r, exists := incomingVSConfig[key]; exists {
 			changes[i].Resource = r
 		}
 	}
 
 	newProblems := make(map[string]ConfigurationProblem)
 
-	c.addProblemsForVSListeners(incomingVSConfigsAndListeners, newProblems)
+	c.addProblemsForVSListeners(incomingVSConfig, newProblems)
 
 	newOrUpdatedProblems := detectChangesInProblems(newProblems, c.vsListenerProblems)
 
@@ -881,8 +864,9 @@ func (c *Configuration) rebuildVSListeners() ([]ResourceChange, []ConfigurationP
 	return changes, newOrUpdatedProblems
 }
 
-func (c *Configuration) buildVSConfigsAndListeners() (incomingVSConfigs map[string]*VirtualServerConfiguration) {
+func (c *Configuration) buildVSConfigsAndListeners() (incomingVSConfigs map[string]*VirtualServerConfiguration, incomingVSListeners map[string]*VirtualServerConfiguration) {
 	incomingVSConfigs = make(map[string]*VirtualServerConfiguration)
+	incomingVSListeners = make(map[string]*VirtualServerConfiguration)
 
 	for key, vs := range c.virtualServers {
 		vsrs, warnings := c.buildVirtualServerRoutes(vs)
@@ -912,49 +896,49 @@ func (c *Configuration) buildVSConfigsAndListeners() (incomingVSConfigs map[stri
 				}
 			}
 		}
-		incomingVSConfigs[key] = vsc
+		incomingVSListeners[key] = vsc
 	}
 
-	return incomingVSConfigs
+	return incomingVSConfigs, incomingVSListeners
 }
 
 func detectChangesInVSListeners(
-	currentVSConfigsAndListeners map[string]*VirtualServerConfiguration,
-	incomingVSConfigsAndListeners map[string]*VirtualServerConfiguration) (
+	currentVSListeners map[string]*VirtualServerConfiguration,
+	incomingVSListeners map[string]*VirtualServerConfiguration) (
 	map[string]*VirtualServerConfiguration,
 	map[string]*VirtualServerConfiguration,
 	map[string]*VirtualServerConfiguration) {
 
-	removedVSConfigListeners := make(map[string]*VirtualServerConfiguration)
-	addedVSConfigListeners := make(map[string]*VirtualServerConfiguration)
-	updatedVSConfigListeners := make(map[string]*VirtualServerConfiguration)
+	removedVSListeners := make(map[string]*VirtualServerConfiguration)
+	addedVSListeners := make(map[string]*VirtualServerConfiguration)
+	updatedVSListeners := make(map[string]*VirtualServerConfiguration)
 
 	// Check for removed listeners in a VS Configs
-	for _, key := range getSortedVirtualServerConfigurationKeys(currentVSConfigsAndListeners) {
-		if _, exists := incomingVSConfigsAndListeners[key]; !exists {
-			removedVSConfigListeners[key] = currentVSConfigsAndListeners[key]
+	for _, key := range getSortedVirtualServerConfigurationKeys(currentVSListeners) {
+		if _, exists := incomingVSListeners[key]; !exists {
+			removedVSListeners[key] = currentVSListeners[key]
 		}
 	}
 
-	for _, key := range getSortedVirtualServerConfigurationKeys(incomingVSConfigsAndListeners) {
-		if _, exists := currentVSConfigsAndListeners[key]; !exists {
-			addedVSConfigListeners[key] = incomingVSConfigsAndListeners[key]
+	for _, key := range getSortedVirtualServerConfigurationKeys(incomingVSListeners) {
+		if _, exists := currentVSListeners[key]; !exists {
+			addedVSListeners[key] = incomingVSListeners[key]
 		}
 	}
 
 	// Check for updated listeners.
-	for _, key := range getSortedVirtualServerConfigurationKeys(incomingVSConfigsAndListeners) {
-		currentVSResource, exists := currentVSConfigsAndListeners[key]
+	for _, key := range getSortedVirtualServerConfigurationKeys(incomingVSListeners) {
+		currentVSResource, exists := currentVSListeners[key]
 		if !exists {
 			continue
 		}
 
-		if !currentVSResource.IsEqual(incomingVSConfigsAndListeners[key]) {
-			updatedVSConfigListeners[key] = currentVSResource
+		if !currentVSResource.IsEqual(incomingVSListeners[key]) {
+			updatedVSListeners[key] = currentVSResource
 		}
 	}
 
-	return removedVSConfigListeners, addedVSConfigListeners, updatedVSConfigListeners
+	return removedVSListeners, addedVSListeners, updatedVSListeners
 }
 
 func createResourceChangesForVSListeners(
@@ -968,13 +952,13 @@ func createResourceChangesForVSListeners(
 	var deleteChanges []ResourceChange
 
 	// Create changes for removed VirtualServer configurations
-	//for key := range removedVSConfigs {
-	//	removedVSConfigChange := ResourceChange{
-	//		Op:       Delete,
-	//		Resource: currenVSConfigsAndListeners[key],
-	//	}
-	//	deleteChanges = append(deleteChanges, removedVSConfigChange)
-	//}
+	for key := range removedVSConfigs {
+		removedVSConfigChange := ResourceChange{
+			Op:       Delete,
+			Resource: currenVSConfigsAndListeners[key],
+		}
+		deleteChanges = append(deleteChanges, removedVSConfigChange)
+	}
 
 	// Create changes for added VirtualServer configuration
 	for key := range addedVSConfigs {
@@ -985,10 +969,11 @@ func createResourceChangesForVSListeners(
 		changes = append(changes, addedVSConfigChange)
 	}
 
+	//TODO Change to incomingVSConfigsAndListeners
 	for key := range updatedVSConfigs {
 		updateVSConfigChange := ResourceChange{
 			Op:       AddOrUpdate,
-			Resource: currenVSConfigsAndListeners[key],
+			Resource: incomingVSConfigsAndListeners[key],
 		}
 		changes = append(changes, updateVSConfigChange)
 	}
@@ -997,47 +982,46 @@ func createResourceChangesForVSListeners(
 }
 
 func (c *Configuration) addProblemsForVSListeners(vsConfigs map[string]*VirtualServerConfiguration, problems map[string]ConfigurationProblem) {
-	for _, vsc := range vsConfigs {
-		if vsc.VirtualServer.Spec.Listener != nil {
-			if c.globalConfiguration != nil {
-				for _, gcListener := range c.globalConfiguration.Spec.Listeners {
-					if gcListener.Protocol == conf_v1.HttpProtocol {
-						if gcListener.Name == vsc.VirtualServer.Spec.Listener.Http {
-							if gcListener.Ssl {
-								p := ConfigurationProblem{
-									Object:  vsc.VirtualServer,
-									IsError: false,
-									Reason:  "Invalid",
-									Message: fmt.Sprintf("Can't use listener %v in Spec.Listener.Http. %v has SSL enabled.",
-										gcListener.Name, gcListener.Name),
-								}
-								problems[vsc.GetKeyWithKind()] = p
-								continue
-							}
-						}
-						if gcListener.Name == vsc.VirtualServer.Spec.Listener.Https {
-							if !gcListener.Ssl {
-								p := ConfigurationProblem{
-									Object:  vsc.VirtualServer,
-									IsError: false,
-									Reason:  "Invalid",
-									Message: fmt.Sprintf("Can't use listener %v in Spec.Listener.Https. %v has SSL disabled.",
-										gcListener.Name, gcListener.Name),
-								}
-								problems[vsc.GetKeyWithKind()] = p
-								continue
-							}
-						}
-					}
-				}
-			} else {
+	// TODO: Test
+	for key, vsc := range vsConfigs {
+		_, exists := c.vsListeners[key]
+		// Happens if a GC object was deleted.
+		if !exists {
+			p := ConfigurationProblem{
+				Object:  vsc.VirtualServer,
+				IsError: false,
+				Reason:  "Invalid",
+				Message: "Listener directive defined, but no GlobalConfiguration is deployed",
+			}
+			problems[vsc.GetKeyWithKind()] = p
+			continue
+		}
+
+		if c.globalConfiguration != nil {
+			// If an HTTP, and/or HTTPs listener has been defined and the port is 0
+			// This means that we did not find a matching listener in GlobalConfiguration
+			if vsc.VirtualServer.Spec.Listener.Http != "" && vsc.HttpPort == 0 {
 				p := ConfigurationProblem{
 					Object:  vsc.VirtualServer,
 					IsError: false,
 					Reason:  "Invalid",
-					Message: "Listener directive is defined, but not GlobalConfiguration is deployed",
+					Message: fmt.Sprintf("Listener %s is not defined in GlobalConfiguration", vsc.VirtualServer.Spec.Listener.Http),
 				}
 				problems[vsc.GetKeyWithKind()] = p
+				c.vsListeners[key].AddWarning("HTTP Listener Warning")
+				continue
+			}
+
+			if vsc.VirtualServer.Spec.Listener.Https != "" && vsc.HttpsPort == 0 {
+				p := ConfigurationProblem{
+					Object:  vsc.VirtualServer,
+					IsError: false,
+					Reason:  "Invalid",
+					Message: fmt.Sprintf("Listener %s is not defined in GlobalConfiguration", vsc.VirtualServer.Spec.Listener.Https),
+				}
+				problems[vsc.GetKeyWithKind()] = p
+				c.vsListeners[key].AddWarning("HTTPs Listener Warning")
+				continue
 			}
 		}
 	}
