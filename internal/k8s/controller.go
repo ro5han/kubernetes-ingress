@@ -2956,11 +2956,10 @@ func (lbc *LoadBalancerController) createVirtualServerEx(virtualServer *conf_v1.
 		DosProtectedEx: make(map[string]*configs.DosEx),
 	}
 
-	key := fmt.Sprintf("%s/%s", virtualServer.Namespace, virtualServer.Name)
-
-	if vsConfig, exists := lbc.configuration.vsListeners[key]; exists {
-		virtualServerEx.HttpPort = vsConfig.HttpPort
-		virtualServerEx.HttpsPort = vsConfig.HttpsPort
+	resource, _ := lbc.configuration.hosts[virtualServer.Spec.Host]
+	if vsc, ok := resource.(*VirtualServerConfiguration); ok {
+		virtualServerEx.HttpPort = vsc.HttpPort
+		virtualServerEx.HttpsPort = vsc.HttpsPort
 	}
 
 	if virtualServer.Spec.TLS != nil && virtualServer.Spec.TLS.Secret != "" {
