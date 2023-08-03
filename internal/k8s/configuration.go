@@ -1007,9 +1007,9 @@ func (c *Configuration) rebuildHosts() ([]ResourceChange, []ConfigurationProblem
 	newProblems := make(map[string]ConfigurationProblem)
 
 	c.addProblemsForResourcesWithoutActiveHost(newResources, newProblems)
-	c.addWarningsForVirtualServersWithMissConfiguredListeners(newResources)
 	c.addProblemsForOrphanMinions(newProblems)
 	c.addProblemsForOrphanOrIgnoredVsrs(newProblems)
+	c.addWarningsForVirtualServersWithMissConfiguredListeners(newResources)
 
 	newOrUpdatedProblems := detectChangesInProblems(newProblems, c.hostProblems)
 
@@ -1139,6 +1139,22 @@ func (c *Configuration) addWarningsForVirtualServersWithMissConfiguredListeners(
 				continue
 			}
 
+			if isHttpListenerInHttpsBlock(c.globalConfiguration.Spec.Listeners, vsc.VirtualServer.Spec.Listener.Http) {
+				warningMsg :=
+					fmt.Sprintf("Listener %s cant be use in `listener.http` context as SSL is enabled for that listener.",
+						vsc.VirtualServer.Spec.Listener.Https)
+				c.hosts[vsc.VirtualServer.Spec.Host].AddWarning(warningMsg)
+				continue
+			}
+
+			if isHttpsListenerInHttpBlock(c.globalConfiguration.Spec.Listeners, vsc.VirtualServer.Spec.Listener.Https) {
+				warningMsg :=
+					fmt.Sprintf("Listener %s cant be use in `listener.https` context as SSL is not enabled for that listener.",
+						vsc.VirtualServer.Spec.Listener.Https)
+				c.hosts[vsc.VirtualServer.Spec.Host].AddWarning(warningMsg)
+				continue
+			}
+
 			if vsc.VirtualServer.Spec.Listener.Http != "" && vsc.HttpPort == 0 {
 				warningMsg := fmt.Sprintf("Listener %s is not defined in GlobalConfiguration",
 					vsc.VirtualServer.Spec.Listener.Http)
@@ -1154,6 +1170,24 @@ func (c *Configuration) addWarningsForVirtualServersWithMissConfiguredListeners(
 			}
 		}
 	}
+}
+
+func isHttpListenerInHttpsBlock(listeners []conf_v1alpha1.Listener, virtualServerHttpListenerName string) bool {
+	for _, gcListener := range listeners {
+		if gcListener.Name == virtualServerHttpListenerName && gcListener.Ssl {
+			return true
+		}
+	}
+	return false
+}
+
+func isHttpsListenerInHttpBlock(listeners []conf_v1alpha1.Listener, virtualServerHttpsListenerName string) bool {
+	for _, gcListener := range listeners {
+		if gcListener.Name == virtualServerHttpsListenerName && !gcListener.Ssl {
+			return true
+		}
+	}
+	return false
 }
 
 func (c *Configuration) addProblemsForOrphanMinions(problems map[string]ConfigurationProblem) {
