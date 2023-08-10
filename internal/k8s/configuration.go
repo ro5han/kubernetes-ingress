@@ -1736,18 +1736,6 @@ func getSortedTransportServerKeys(m map[string]*conf_v1alpha1.TransportServer) [
 	return keys
 }
 
-func getSortedVirtualServerConfigurationKeys(m map[string]*VirtualServerConfiguration) []string {
-	var keys []string
-
-	for k := range m {
-		keys = append(keys, k)
-	}
-
-	sort.Strings(keys)
-
-	return keys
-}
-
 func getSortedTransportServerConfigurationKeys(m map[string]*TransportServerConfiguration) []string {
 	var keys []string
 
