@@ -209,3 +209,19 @@ func TestGeneratePortProtocolKey(t *testing.T) {
 		t.Errorf("generatePortProtocolKey(%d, %q) returned %q but expected %q", port, protocol, result, expected)
 	}
 }
+
+func TestValidateListenerProtocol_FailsOnInvalidInput(t *testing.T) {
+	t.Parallel()
+	invalidProtocols := []string{
+		"",
+		"udp",
+		"UDP ",
+	}
+
+	for _, p := range invalidProtocols {
+		allErrs := validateListenerProtocol(p, field.NewPath("protocol"))
+		if len(allErrs) == 0 {
+			t.Errorf("validateListenerProtocol(%q) returned no errors for invalid input", p)
+		}
+	}
+}

@@ -2,12 +2,20 @@ package validation
 
 import (
 	"fmt"
+	"sort"
+	"strings"
 
 	"github.com/nginxinc/kubernetes-ingress/pkg/apis/configuration/v1alpha1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 )
+
+var allowedProtocols = map[string]bool{
+	"TCP":  true,
+	"UDP":  true,
+	"HTTP": true,
+}
 
 // GlobalConfigurationValidator validates a GlobalConfiguration resource.
 type GlobalConfigurationValidator struct {
@@ -88,4 +96,27 @@ func (gcv *GlobalConfigurationValidator) validateListenerPort(port int, fieldPat
 		allErrs = append(allErrs, field.Invalid(fieldPath, port, msg))
 	}
 	return allErrs
+}
+
+func validateListenerProtocol(protocol string, fieldPath *field.Path) field.ErrorList {
+	switch {
+	case allowedProtocols[protocol]:
+		return nil
+	default:
+		msg := fmt.Sprintf("must specify a valid protocol. Accepted values: %s",
+			strings.Join(getProtocolsFromMap(allowedProtocols), ","))
+		return field.ErrorList{field.Invalid(fieldPath, protocol, msg)}
+	}
+}
+
+func getProtocolsFromMap(p map[string]bool) []string {
+	var keys []string
+
+	for k := range p {
+		keys = append(keys, k)
+	}
+
+	sort.Strings(keys)
+
+	return keys
 }
