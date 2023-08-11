@@ -327,8 +327,9 @@ type TransportServerMetrics struct {
 // The IC needs to ensure that at any point in time the NGINX config on the filesystem reflects the state
 // of the objects in the Configuration.
 type Configuration struct {
-	hosts     map[string]Resource
-	listeners map[string]*TransportServerConfiguration
+	hosts       map[string]Resource
+	listeners   map[string]*TransportServerConfiguration
+	listenerMap map[string]conf_v1alpha1.Listener
 
 	// only valid resources with the matching IngressClass are stored
 	ingresses           map[string]*networking.Ingress
@@ -609,6 +610,8 @@ func (c *Configuration) AddOrUpdateGlobalConfiguration(gc *conf_v1alpha1.GlobalC
 		c.globalConfiguration = gc
 	}
 
+	c.makeGlobalConfigListenerMap()
+
 	tsListenerChanges, tsListenerProblems := c.rebuildListeners()
 	changes = append(changes, tsListenerChanges...)
 	problems = append(problems, tsListenerProblems...)
@@ -629,6 +632,7 @@ func (c *Configuration) DeleteGlobalConfiguration() ([]ResourceChange, []Configu
 	var problems []ConfigurationProblem
 
 	c.globalConfiguration = nil
+	c.makeGlobalConfigListenerMap()
 	listenerChanges, listenerProblems := c.rebuildListeners()
 	changes = append(changes, listenerChanges...)
 	problems = append(problems, listenerProblems...)
@@ -816,19 +820,15 @@ func (c *Configuration) buildListenersAndTSConfigurations() (newListeners map[st
 func (c *Configuration) buildListenersForVSConfiguration(vsc *VirtualServerConfiguration) {
 	vs := vsc.VirtualServer
 	if vs.Spec.Listener != nil && c.globalConfiguration != nil {
-		for _, gcListener := range c.globalConfiguration.Spec.Listeners {
-			if gcListener.Protocol == conf_v1.HttpProtocol {
-				if vs.Spec.Listener.Http != "" {
-					if vs.Spec.Listener.Http == gcListener.Name && !gcListener.Ssl {
-						vsc.HttpPort = gcListener.Port
-					}
-				}
+		if gcListener, ok := c.listenerMap[vs.Spec.Listener.Http]; ok {
+			if gcListener.Protocol == conf_v1.HttpProtocol && !gcListener.Ssl {
+				vsc.HttpPort = gcListener.Port
+			}
+		}
 
-				if vs.Spec.Listener.Https != "" {
-					if vs.Spec.Listener.Https == gcListener.Name && gcListener.Ssl {
-						vsc.HttpsPort = gcListener.Port
-					}
-				}
+		if gcListener, ok := c.listenerMap[vs.Spec.Listener.Https]; ok {
+			if gcListener.Protocol == conf_v1.HttpProtocol && gcListener.Ssl {
+				vsc.HttpsPort = gcListener.Port
 			}
 		}
 	}
@@ -1139,7 +1139,7 @@ func (c *Configuration) addWarningsForVirtualServersWithMissConfiguredListeners(
 				continue
 			}
 
-			if isHttpsListenerInHttpBlock(c.globalConfiguration.Spec.Listeners, vsc.VirtualServer.Spec.Listener.Http) {
+			if !c.isListenerInCorrectBlock(vsc.VirtualServer.Spec.Listener.Http, false) {
 				warningMsg :=
 					fmt.Sprintf("Listener %s can't be use in `listener.http` context as SSL is enabled for that listener.",
 						vsc.VirtualServer.Spec.Listener.Http)
@@ -1147,7 +1147,7 @@ func (c *Configuration) addWarningsForVirtualServersWithMissConfiguredListeners(
 				continue
 			}
 
-			if isHttpListenerInHttpsBlock(c.globalConfiguration.Spec.Listeners, vsc.VirtualServer.Spec.Listener.Https) {
+			if !c.isListenerInCorrectBlock(vsc.VirtualServer.Spec.Listener.Https, true) {
 				warningMsg :=
 					fmt.Sprintf("Listener %s can't be use in `listener.https` context as SSL is not enabled for that listener.",
 						vsc.VirtualServer.Spec.Listener.Https)
@@ -1155,14 +1155,14 @@ func (c *Configuration) addWarningsForVirtualServersWithMissConfiguredListeners(
 				continue
 			}
 
-			if vsc.VirtualServer.Spec.Listener.Http != "" && vsc.HttpPort == 0 {
+			if _, ok = c.listenerMap[vsc.VirtualServer.Spec.Listener.Http]; !ok {
 				warningMsg := fmt.Sprintf("Listener %s is not defined in GlobalConfiguration",
 					vsc.VirtualServer.Spec.Listener.Http)
 				c.hosts[vsc.VirtualServer.Spec.Host].AddWarning(warningMsg)
 				continue
 			}
 
-			if vsc.VirtualServer.Spec.Listener.Https != "" && vsc.HttpsPort == 0 {
+			if _, ok = c.listenerMap[vsc.VirtualServer.Spec.Listener.Https]; !ok {
 				warningMsg := fmt.Sprintf("Listener %s is not defined in GlobalConfiguration",
 					vsc.VirtualServer.Spec.Listener.Https)
 				c.hosts[vsc.VirtualServer.Spec.Host].AddWarning(warningMsg)
@@ -1172,22 +1172,11 @@ func (c *Configuration) addWarningsForVirtualServersWithMissConfiguredListeners(
 	}
 }
 
-func isHttpListenerInHttpsBlock(listeners []conf_v1alpha1.Listener, virtualServerHttpsListenerName string) bool {
-	for _, gcListener := range listeners {
-		if gcListener.Name == virtualServerHttpsListenerName && !gcListener.Ssl {
-			return true
-		}
+func (c *Configuration) isListenerInCorrectBlock(listenerName string, expectedSsl bool) bool {
+	if listener, ok := c.listenerMap[listenerName]; listener.Ssl != expectedSsl && ok {
+		return false
 	}
-	return false
-}
-
-func isHttpsListenerInHttpBlock(listeners []conf_v1alpha1.Listener, virtualServerHttpListenerName string) bool {
-	for _, gcListener := range listeners {
-		if gcListener.Name == virtualServerHttpListenerName && gcListener.Ssl {
-			return true
-		}
-	}
-	return false
+	return true
 }
 
 func (c *Configuration) addProblemsForOrphanMinions(problems map[string]ConfigurationProblem) {
@@ -1662,6 +1651,16 @@ func (c *Configuration) GetTransportServerMetrics() *TransportServerMetrics {
 	}
 
 	return &metrics
+}
+
+func (c *Configuration) makeGlobalConfigListenerMap() {
+	c.listenerMap = make(map[string]conf_v1alpha1.Listener)
+
+	if c.globalConfiguration != nil {
+		for _, listener := range c.globalConfiguration.Spec.Listeners {
+			c.listenerMap[listener.Name] = listener
+		}
+	}
 }
 
 func getSortedIngressKeys(m map[string]*networking.Ingress) []string {
