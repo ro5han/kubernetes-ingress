@@ -1272,6 +1272,9 @@ func TestGenerateVirtualServerConfig(t *testing.T) {
 		Server: version2.Server{
 			ServerName:      "cafe.example.com",
 			StatusZone:      "cafe.example.com",
+			HttpPort:        0,
+			HttpsPort:       0,
+			CustomListeners: false,
 			VSNamespace:     "default",
 			VSName:          "cafe",
 			ProxyProtocol:   true,
@@ -1429,6 +1432,198 @@ func TestGenerateVirtualServerConfig(t *testing.T) {
 	)
 
 	result, warnings := vsc.GenerateVirtualServerConfig(&virtualServerEx, nil, nil)
+	if diff := cmp.Diff(expected, result); diff != "" {
+		t.Errorf("GenerateVirtualServerConfig() mismatch (-want +got):\n%s", diff)
+	}
+
+	if len(warnings) != 0 {
+		t.Errorf("GenerateVirtualServerConfig returned warnings: %v", vsc.warnings)
+	}
+}
+
+func TestGenerateVirtualServerConfigWithCustomHttpAndHttpsListeners(t *testing.T) {
+	t.Parallel()
+
+	expected := version2.VirtualServerConfig{
+		Upstreams:     nil,
+		HTTPSnippets:  []string{},
+		LimitReqZones: []version2.LimitReqZone{},
+		Server: version2.Server{
+			ServerName:      virtualServerExWithCustomHttpAndHttpsListeners.VirtualServer.Spec.Host,
+			StatusZone:      virtualServerExWithCustomHttpAndHttpsListeners.VirtualServer.Spec.Host,
+			VSNamespace:     virtualServerExWithCustomHttpAndHttpsListeners.VirtualServer.ObjectMeta.Namespace,
+			VSName:          virtualServerExWithCustomHttpAndHttpsListeners.VirtualServer.ObjectMeta.Name,
+			DisableIPV6:     true,
+			HttpPort:        virtualServerExWithCustomHttpAndHttpsListeners.HttpPort,
+			HttpsPort:       virtualServerExWithCustomHttpAndHttpsListeners.HttpsPort,
+			CustomListeners: true,
+			ProxyProtocol:   true,
+			ServerTokens:    "off",
+			SetRealIPFrom:   []string{"0.0.0.0/0"},
+			RealIPHeader:    "X-Real-IP",
+			RealIPRecursive: true,
+			Snippets:        []string{"# server snippet"},
+			Locations:       nil,
+		},
+	}
+
+	vsc := newVirtualServerConfigurator(
+		&baseCfgParams,
+		false,
+		false,
+		&StaticConfigParams{DisableIPV6: true},
+		false,
+	)
+
+	result, warnings := vsc.GenerateVirtualServerConfig(
+		&virtualServerExWithCustomHttpAndHttpsListeners,
+		nil,
+		nil)
+
+	if diff := cmp.Diff(expected, result); diff != "" {
+		t.Errorf("GenerateVirtualServerConfig() mismatch (-want +got):\n%s", diff)
+	}
+
+	if len(warnings) != 0 {
+		t.Errorf("GenerateVirtualServerConfig returned warnings: %v", vsc.warnings)
+	}
+}
+
+func TestGenerateVirtualServerConfigWithCustomHttpListener(t *testing.T) {
+	t.Parallel()
+
+	expected := version2.VirtualServerConfig{
+		Upstreams:     nil,
+		HTTPSnippets:  []string{},
+		LimitReqZones: []version2.LimitReqZone{},
+		Server: version2.Server{
+			ServerName:      virtualServerExWithCustomHttpListener.VirtualServer.Spec.Host,
+			StatusZone:      virtualServerExWithCustomHttpListener.VirtualServer.Spec.Host,
+			VSNamespace:     virtualServerExWithCustomHttpListener.VirtualServer.ObjectMeta.Namespace,
+			VSName:          virtualServerExWithCustomHttpListener.VirtualServer.ObjectMeta.Name,
+			DisableIPV6:     true,
+			HttpPort:        virtualServerExWithCustomHttpListener.HttpPort,
+			HttpsPort:       virtualServerExWithCustomHttpListener.HttpsPort,
+			CustomListeners: true,
+			ProxyProtocol:   true,
+			ServerTokens:    "off",
+			SetRealIPFrom:   []string{"0.0.0.0/0"},
+			RealIPHeader:    "X-Real-IP",
+			RealIPRecursive: true,
+			Snippets:        []string{"# server snippet"},
+			Locations:       nil,
+		},
+	}
+
+	vsc := newVirtualServerConfigurator(
+		&baseCfgParams,
+		false,
+		false,
+		&StaticConfigParams{DisableIPV6: true},
+		false,
+	)
+
+	result, warnings := vsc.GenerateVirtualServerConfig(
+		&virtualServerExWithCustomHttpListener,
+		nil,
+		nil)
+
+	if diff := cmp.Diff(expected, result); diff != "" {
+		t.Errorf("GenerateVirtualServerConfig() mismatch (-want +got):\n%s", diff)
+	}
+
+	if len(warnings) != 0 {
+		t.Errorf("GenerateVirtualServerConfig returned warnings: %v", vsc.warnings)
+	}
+}
+
+func TestGenerateVirtualServerConfigWithCustomHttpsListener(t *testing.T) {
+	t.Parallel()
+
+	expected := version2.VirtualServerConfig{
+		Upstreams:     nil,
+		HTTPSnippets:  []string{},
+		LimitReqZones: []version2.LimitReqZone{},
+		Server: version2.Server{
+			ServerName:      virtualServerExWithCustomHttpsListener.VirtualServer.Spec.Host,
+			StatusZone:      virtualServerExWithCustomHttpsListener.VirtualServer.Spec.Host,
+			VSNamespace:     virtualServerExWithCustomHttpsListener.VirtualServer.ObjectMeta.Namespace,
+			VSName:          virtualServerExWithCustomHttpsListener.VirtualServer.ObjectMeta.Name,
+			DisableIPV6:     true,
+			HttpPort:        virtualServerExWithCustomHttpsListener.HttpPort,
+			HttpsPort:       virtualServerExWithCustomHttpsListener.HttpsPort,
+			CustomListeners: true,
+			ProxyProtocol:   true,
+			ServerTokens:    "off",
+			SetRealIPFrom:   []string{"0.0.0.0/0"},
+			RealIPHeader:    "X-Real-IP",
+			RealIPRecursive: true,
+			Snippets:        []string{"# server snippet"},
+			Locations:       nil,
+		},
+	}
+
+	vsc := newVirtualServerConfigurator(
+		&baseCfgParams,
+		false,
+		false,
+		&StaticConfigParams{DisableIPV6: true},
+		false,
+	)
+
+	result, warnings := vsc.GenerateVirtualServerConfig(
+		&virtualServerExWithCustomHttpsListener,
+		nil,
+		nil)
+
+	if diff := cmp.Diff(expected, result); diff != "" {
+		t.Errorf("GenerateVirtualServerConfig() mismatch (-want +got):\n%s", diff)
+	}
+
+	if len(warnings) != 0 {
+		t.Errorf("GenerateVirtualServerConfig returned warnings: %v", vsc.warnings)
+	}
+}
+
+func TestGenerateVirtualServerConfigWithNilListener(t *testing.T) {
+	t.Parallel()
+
+	expected := version2.VirtualServerConfig{
+		Upstreams:     nil,
+		HTTPSnippets:  []string{},
+		LimitReqZones: []version2.LimitReqZone{},
+		Server: version2.Server{
+			ServerName:      virtualServerExWithNilListener.VirtualServer.Spec.Host,
+			StatusZone:      virtualServerExWithNilListener.VirtualServer.Spec.Host,
+			VSNamespace:     virtualServerExWithNilListener.VirtualServer.ObjectMeta.Namespace,
+			VSName:          virtualServerExWithNilListener.VirtualServer.ObjectMeta.Name,
+			DisableIPV6:     true,
+			HttpPort:        virtualServerExWithNilListener.HttpPort,
+			HttpsPort:       virtualServerExWithNilListener.HttpsPort,
+			CustomListeners: false,
+			ProxyProtocol:   true,
+			ServerTokens:    baseCfgParams.ServerTokens,
+			SetRealIPFrom:   []string{"0.0.0.0/0"},
+			RealIPHeader:    "X-Real-IP",
+			RealIPRecursive: true,
+			Snippets:        []string{"# server snippet"},
+			Locations:       nil,
+		},
+	}
+
+	vsc := newVirtualServerConfigurator(
+		&baseCfgParams,
+		false,
+		false,
+		&StaticConfigParams{DisableIPV6: true},
+		false,
+	)
+
+	result, warnings := vsc.GenerateVirtualServerConfig(
+		&virtualServerExWithNilListener,
+		nil,
+		nil)
+
 	if diff := cmp.Diff(expected, result); diff != "" {
 		t.Errorf("GenerateVirtualServerConfig() mismatch (-want +got):\n%s", diff)
 	}
@@ -11003,6 +11198,69 @@ var (
 						},
 					},
 				},
+			},
+		},
+	}
+
+	virtualServerExWithCustomHttpAndHttpsListeners = VirtualServerEx{
+		HttpPort:  8083,
+		HttpsPort: 8443,
+		VirtualServer: &conf_v1.VirtualServer{
+			ObjectMeta: meta_v1.ObjectMeta{
+				Name:      "cafe",
+				Namespace: "default",
+			},
+			Spec: conf_v1.VirtualServerSpec{
+				Host: "cafe.example.com",
+				Listener: &conf_v1.Listener{
+					Http:  "http-8083",
+					Https: "https-8443",
+				},
+			},
+		},
+	}
+
+	virtualServerExWithCustomHttpListener = VirtualServerEx{
+		HttpPort: 8083,
+		VirtualServer: &conf_v1.VirtualServer{
+			ObjectMeta: meta_v1.ObjectMeta{
+				Name:      "cafe",
+				Namespace: "default",
+			},
+			Spec: conf_v1.VirtualServerSpec{
+				Host: "cafe.example.com",
+				Listener: &conf_v1.Listener{
+					Http: "http-8083",
+				},
+			},
+		},
+	}
+
+	virtualServerExWithCustomHttpsListener = VirtualServerEx{
+		HttpsPort: 8443,
+		VirtualServer: &conf_v1.VirtualServer{
+			ObjectMeta: meta_v1.ObjectMeta{
+				Name:      "cafe",
+				Namespace: "default",
+			},
+			Spec: conf_v1.VirtualServerSpec{
+				Host: "cafe.example.com",
+				Listener: &conf_v1.Listener{
+					Https: "https-8443",
+				},
+			},
+		},
+	}
+
+	virtualServerExWithNilListener = VirtualServerEx{
+		VirtualServer: &conf_v1.VirtualServer{
+			ObjectMeta: meta_v1.ObjectMeta{
+				Name:      "cafe",
+				Namespace: "default",
+			},
+			Spec: conf_v1.VirtualServerSpec{
+				Host:     "cafe.example.com",
+				Listener: nil,
 			},
 		},
 	}
