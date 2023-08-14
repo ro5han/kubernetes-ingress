@@ -2624,18 +2624,13 @@ func TestAddGlobalConfigurationThenAddVirtualServerWithValidCustomListeners(t *t
 	var expectedChanges []ResourceChange
 	var expectedProblems []ConfigurationProblem
 
-	changes, problems, err := configuration.AddOrUpdateGlobalConfiguration(gc)
-	if diff := cmp.Diff(expectedChanges, changes); diff != "" {
-		t.Errorf("AddOrUpdateGlobalConfiguration() returned unexpected result (-want +got):\n%s", diff)
-	}
-	if diff := cmp.Diff(expectedProblems, problems); diff != "" {
-		t.Errorf("AddOrUpdateGlobalConfiguration() returned unexpected result (-want +got):\n%s", diff)
-	}
-	if err != nil {
-		t.Errorf("AddOrUpdateGlobalConfiguration() returned unexpected error: %v", err)
-	}
+	mustInitGlobalConfiguration(configuration, gc)
 
-	virtualServer := createTestVirtualServerWithListeners("cafe", "cafe.example.com", "http-8082", "https-8442")
+	virtualServer := createTestVirtualServerWithListeners(
+		"cafe",
+		"cafe.example.com",
+		"http-8082",
+		"https-8442")
 
 	expectedChanges = []ResourceChange{
 		{
@@ -2649,7 +2644,7 @@ func TestAddGlobalConfigurationThenAddVirtualServerWithValidCustomListeners(t *t
 	}
 	expectedProblems = nil
 
-	changes, problems = configuration.AddOrUpdateVirtualServer(virtualServer)
+	changes, problems := configuration.AddOrUpdateVirtualServer(virtualServer)
 
 	if diff := cmp.Diff(expectedChanges, changes); diff != "" {
 		t.Errorf("AddOrUpdateVirtualServer() returned unexpected result (-want +got):\n%s", diff)
@@ -2664,7 +2659,12 @@ func TestAddVirtualServerWithValidCustomListenersFirstThenAddGlobalConfiguration
 	var expectedChanges []ResourceChange
 	var expectedProblems []ConfigurationProblem
 
-	virtualServer := createTestVirtualServerWithListeners("cafe", "cafe.example.com", "http-8082", "https-8442")
+	virtualServer := createTestVirtualServerWithListeners(
+		"cafe",
+		"cafe.example.com",
+		"http-8082",
+		"https-8442")
+
 	expectedChanges = []ResourceChange{
 		{
 			Op: AddOrUpdate,
@@ -2731,7 +2731,12 @@ func TestAddVirtualServerWithValidCustomListenersAndNoGlobalConfiguration(t *tes
 	var expectedChanges []ResourceChange
 	var expectedProblems []ConfigurationProblem
 
-	virtualServer := createTestVirtualServerWithListeners("cafe", "cafe.example.com", "http-8082", "https-8442")
+	virtualServer := createTestVirtualServerWithListeners(
+		"cafe",
+		"cafe.example.com",
+		"http-8082",
+		"https-8442")
+
 	expectedChanges = []ResourceChange{
 		{
 			Op: AddOrUpdate,
@@ -2776,16 +2781,7 @@ func TestAddVirtualServerWithCustomHttpListenerThatDoNotExistInGlobalConfigurati
 	var expectedChanges []ResourceChange
 	var expectedProblems []ConfigurationProblem
 
-	changes, problems, err := configuration.AddOrUpdateGlobalConfiguration(gc)
-	if diff := cmp.Diff(expectedChanges, changes); diff != "" {
-		t.Errorf("AddOrUpdateGlobalConfiguration() returned unexpected result (-want +got):\n%s", diff)
-	}
-	if diff := cmp.Diff(expectedProblems, problems); diff != "" {
-		t.Errorf("AddOrUpdateGlobalConfiguration() returned unexpected result (-want +got):\n%s", diff)
-	}
-	if err != nil {
-		t.Errorf("AddOrUpdateGlobalConfiguration() returned unexpected error: %v", err)
-	}
+	mustInitGlobalConfiguration(configuration, gc)
 
 	virtualServer := createTestVirtualServerWithListeners(
 		"cafe",
@@ -2806,7 +2802,7 @@ func TestAddVirtualServerWithCustomHttpListenerThatDoNotExistInGlobalConfigurati
 	}
 	expectedProblems = nil
 
-	changes, problems = configuration.AddOrUpdateVirtualServer(virtualServer)
+	changes, problems := configuration.AddOrUpdateVirtualServer(virtualServer)
 
 	if diff := cmp.Diff(expectedChanges, changes); diff != "" {
 		t.Errorf("AddOrUpdateVirtualServer() returned unexpected result (-want +got):\n%s", diff)
@@ -2837,16 +2833,7 @@ func TestAddVirtualServerWithCustomHttpsListenerThatDoNotExistInGlobalConfigurat
 	var expectedChanges []ResourceChange
 	var expectedProblems []ConfigurationProblem
 
-	changes, problems, err := configuration.AddOrUpdateGlobalConfiguration(gc)
-	if diff := cmp.Diff(expectedChanges, changes); diff != "" {
-		t.Errorf("AddOrUpdateGlobalConfiguration() returned unexpected result (-want +got):\n%s", diff)
-	}
-	if diff := cmp.Diff(expectedProblems, problems); diff != "" {
-		t.Errorf("AddOrUpdateGlobalConfiguration() returned unexpected result (-want +got):\n%s", diff)
-	}
-	if err != nil {
-		t.Errorf("AddOrUpdateGlobalConfiguration() returned unexpected error: %v", err)
-	}
+	mustInitGlobalConfiguration(configuration, gc)
 
 	virtualServer := createTestVirtualServerWithListeners(
 		"cafe",
@@ -2867,7 +2854,7 @@ func TestAddVirtualServerWithCustomHttpsListenerThatDoNotExistInGlobalConfigurat
 	}
 	expectedProblems = nil
 
-	changes, problems = configuration.AddOrUpdateVirtualServer(virtualServer)
+	changes, problems := configuration.AddOrUpdateVirtualServer(virtualServer)
 
 	if diff := cmp.Diff(expectedChanges, changes); diff != "" {
 		t.Errorf("AddOrUpdateVirtualServer() returned unexpected result (-want +got):\n%s", diff)
