@@ -610,7 +610,7 @@ func (c *Configuration) AddOrUpdateGlobalConfiguration(gc *conf_v1alpha1.GlobalC
 		c.globalConfiguration = gc
 	}
 
-	c.makeGlobalConfigListenerMap()
+	c.setGlobalConfigListenerMap()
 
 	tsListenerChanges, tsListenerProblems := c.rebuildListeners()
 	changes = append(changes, tsListenerChanges...)
@@ -632,7 +632,7 @@ func (c *Configuration) DeleteGlobalConfiguration() ([]ResourceChange, []Configu
 	var problems []ConfigurationProblem
 
 	c.globalConfiguration = nil
-	c.makeGlobalConfigListenerMap()
+	c.setGlobalConfigListenerMap()
 	listenerChanges, listenerProblems := c.rebuildListeners()
 	changes = append(changes, listenerChanges...)
 	problems = append(problems, listenerProblems...)
@@ -1135,7 +1135,8 @@ func (c *Configuration) addWarningsForVirtualServersWithMissConfiguredListeners(
 		}
 		if vsc.VirtualServer.Spec.Listener != nil {
 			if c.globalConfiguration == nil {
-				c.hosts[vsc.VirtualServer.Spec.Host].AddWarning("Listeners defined, but no GlobalConfiguration is deployed")
+				warningMsg := "Listeners defined, but no GlobalConfiguration is deployed"
+				c.hosts[vsc.VirtualServer.Spec.Host].AddWarning(warningMsg)
 				continue
 			}
 
@@ -1155,18 +1156,22 @@ func (c *Configuration) addWarningsForVirtualServersWithMissConfiguredListeners(
 				continue
 			}
 
-			if _, ok = c.listenerMap[vsc.VirtualServer.Spec.Listener.Http]; !ok {
-				warningMsg := fmt.Sprintf("Listener %s is not defined in GlobalConfiguration",
-					vsc.VirtualServer.Spec.Listener.Http)
-				c.hosts[vsc.VirtualServer.Spec.Host].AddWarning(warningMsg)
-				continue
+			if vsc.VirtualServer.Spec.Listener.Http != "" {
+				if _, exists := c.listenerMap[vsc.VirtualServer.Spec.Listener.Http]; !exists {
+					warningMsg := fmt.Sprintf("Listener %s is not defined in GlobalConfiguration",
+						vsc.VirtualServer.Spec.Listener.Http)
+					c.hosts[vsc.VirtualServer.Spec.Host].AddWarning(warningMsg)
+					continue
+				}
 			}
 
-			if _, ok = c.listenerMap[vsc.VirtualServer.Spec.Listener.Https]; !ok {
-				warningMsg := fmt.Sprintf("Listener %s is not defined in GlobalConfiguration",
-					vsc.VirtualServer.Spec.Listener.Https)
-				c.hosts[vsc.VirtualServer.Spec.Host].AddWarning(warningMsg)
-				continue
+			if vsc.VirtualServer.Spec.Listener.Https != "" {
+				if _, exists := c.listenerMap[vsc.VirtualServer.Spec.Listener.Https]; !exists {
+					warningMsg := fmt.Sprintf("Listener %s is not defined in GlobalConfiguration",
+						vsc.VirtualServer.Spec.Listener.Https)
+					c.hosts[vsc.VirtualServer.Spec.Host].AddWarning(warningMsg)
+					continue
+				}
 			}
 		}
 	}
@@ -1653,7 +1658,7 @@ func (c *Configuration) GetTransportServerMetrics() *TransportServerMetrics {
 	return &metrics
 }
 
-func (c *Configuration) makeGlobalConfigListenerMap() {
+func (c *Configuration) setGlobalConfigListenerMap() {
 	c.listenerMap = make(map[string]conf_v1alpha1.Listener)
 
 	if c.globalConfiguration != nil {
