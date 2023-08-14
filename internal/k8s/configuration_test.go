@@ -3999,6 +3999,70 @@ func TestUpdateGlobalConfigurationWithVirtualServerDeployedWithNoCustomListeners
 	}
 }
 
+func TestDeleteGlobalConfigurationWithVirtualServerDeployedWithNoCustomListeners(t *testing.T) {
+	configuration := createTestConfiguration()
+
+	listeners := []conf_v1alpha1.Listener{
+		{
+			Name:     "http-8082",
+			Port:     8082,
+			Protocol: "HTTP",
+		},
+		{
+			Name:     "https-8442",
+			Port:     8442,
+			Protocol: "HTTP",
+			Ssl:      true,
+		},
+	}
+	gc := createTestGlobalConfiguration(listeners)
+
+	var expectedChanges []ResourceChange
+	var expectedProblems []ConfigurationProblem
+
+	mustInitGlobalConfiguration(configuration, gc)
+
+	virtualServer := createTestVirtualServer(
+		"cafe",
+		"cafe.example.com")
+
+	expectedChanges = []ResourceChange{
+		{
+			Op: AddOrUpdate,
+			Resource: &VirtualServerConfiguration{
+				VirtualServer: virtualServer,
+				HttpPort:      0,
+				HttpsPort:     0,
+			},
+		},
+	}
+	expectedProblems = nil
+
+	changes, problems := configuration.AddOrUpdateVirtualServer(virtualServer)
+
+	if diff := cmp.Diff(expectedChanges, changes); diff != "" {
+		t.Errorf("AddOrUpdateVirtualServer() returned unexpected result (-want +got):\n%s", diff)
+	}
+	if diff := cmp.Diff(expectedProblems, problems); diff != "" {
+		t.Errorf("AddOrUpdateVirtualServer() returned unexpected result (-want +got):\n%s", diff)
+	}
+
+	// Delete the existing GlobalConfiguration
+	// Since our VirtualServer does not have any listeners
+	// we do not want to see any VirtualServerConfiguration events
+
+	expectedChanges = nil
+	expectedProblems = nil
+
+	changes, problems = configuration.DeleteGlobalConfiguration()
+	if diff := cmp.Diff(expectedChanges, changes); diff != "" {
+		t.Errorf("AddOrUpdateGlobalConfiguration() returned unexpected result (-want +got):\n%s", diff)
+	}
+	if diff := cmp.Diff(expectedProblems, problems); diff != "" {
+		t.Errorf("AddOrUpdateGlobalConfiguration() returned unexpected result (-want +got):\n%s", diff)
+	}
+}
+
 func TestPortCollisions(t *testing.T) {
 	configuration := createTestConfiguration()
 
