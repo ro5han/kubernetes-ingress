@@ -45,6 +45,8 @@ func (gcv *GlobalConfigurationValidator) validateListeners(listeners []v1alpha1.
 	listenerNames := sets.Set[string]{}
 	portProtocolCombinations := sets.Set[string]{}
 
+	portProtocolMap := make(map[int]string)
+
 	for i, l := range listeners {
 		idxPath := fieldPath.Index(i)
 		portProtocolKey := generatePortProtocolKey(l.Port, l.Protocol)
@@ -57,9 +59,28 @@ func (gcv *GlobalConfigurationValidator) validateListeners(listeners []v1alpha1.
 		} else if portProtocolCombinations.Has(portProtocolKey) {
 			msg := fmt.Sprintf("Duplicated port/protocol combination %s", portProtocolKey)
 			allErrs = append(allErrs, field.Duplicate(fieldPath, msg))
+		} else if protocol, ok := portProtocolMap[l.Port]; ok {
+			var msg string
+			switch protocol {
+			case "HTTP":
+				if l.Protocol == "TCP" || l.Protocol == "UDP" {
+					msg = fmt.Sprintf(
+						"Listener %s with protocol %s can't use port %d. Port is taken by an HTTP listener",
+						l.Name, l.Protocol, l.Port)
+					allErrs = append(allErrs, field.Forbidden(fieldPath, msg))
+				}
+			case "TCP", "UDP":
+				if l.Protocol == "HTTP" {
+					msg = fmt.Sprintf(
+						"Listener %s with protocol %s can't use port %d. Port is taken by TCP or UDP listener",
+						l.Name, l.Protocol, l.Port)
+					allErrs = append(allErrs, field.Forbidden(fieldPath, msg))
+				}
+			}
 		} else {
 			listenerNames.Insert(l.Name)
 			portProtocolCombinations.Insert(portProtocolKey)
+			portProtocolMap[l.Port] = l.Protocol
 		}
 	}
 
