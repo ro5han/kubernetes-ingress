@@ -262,7 +262,7 @@ func (cnf *Configurator) AddOrUpdateIngress(ingEx *IngressEx) (Warnings, error) 
 		return warnings, fmt.Errorf("Error reloading NGINX for %v/%v: %w", ingEx.Ingress.Namespace, ingEx.Ingress.Name, err)
 	}
 
-	glog.V(1).Info("Reloading for AddOrUpdateIngress()")
+	glog.V(3).Info("Reloading for AddOrUpdateIngress()")
 
 	return warnings, nil
 }
@@ -311,7 +311,7 @@ func (cnf *Configurator) AddOrUpdateMergeableIngress(mergeableIngs *MergeableIng
 		return warnings, fmt.Errorf("Error reloading NGINX for %v/%v: %w", mergeableIngs.Master.Ingress.Namespace, mergeableIngs.Master.Ingress.Name, err)
 	}
 
-	glog.V(1).Info("Reloading for AddOrUpdateMergeableIngress()")
+	glog.V(3).Info("Reloading for AddOrUpdateMergeableIngress()")
 
 	return warnings, nil
 }
@@ -452,7 +452,7 @@ func (cnf *Configurator) AddOrUpdateVirtualServer(virtualServerEx *VirtualServer
 		return warnings, fmt.Errorf("Error reloading NGINX for VirtualServer %v/%v: %w", virtualServerEx.VirtualServer.Namespace, virtualServerEx.VirtualServer.Name, err)
 	}
 
-	glog.V(1).Info("Reloading for AddOrUpdateVirtualServer()")
+	glog.V(3).Info("Reloading for AddOrUpdateVirtualServer()")
 
 	return warnings, nil
 }
@@ -507,7 +507,7 @@ func (cnf *Configurator) AddOrUpdateVirtualServers(virtualServerExes []*VirtualS
 		return allWarnings, fmt.Errorf("Error when reloading NGINX when updating Policy: %w", err)
 	}
 
-	glog.V(1).Info("Reloading for AddOrUpdateVirtualServers()")
+	glog.V(3).Info("Reloading for AddOrUpdateVirtualServers()")
 
 	return allWarnings, nil
 }
@@ -591,7 +591,7 @@ func (cnf *Configurator) AddOrUpdateTransportServer(transportServerEx *Transport
 		return fmt.Errorf("Error reloading NGINX for TransportServer %v/%v: %w", transportServerEx.TransportServer.Namespace, transportServerEx.TransportServer.Name, err)
 	}
 
-	glog.V(1).Info("Reloading for AddOrUpdateTransportServer()")
+	glog.V(3).Info("Reloading for AddOrUpdateTransportServer()")
 
 	return nil
 }
@@ -717,7 +717,7 @@ func (cnf *Configurator) AddOrUpdateResources(resources ExtendedResources) (Warn
 		return allWarnings, fmt.Errorf("Error when reloading NGINX when updating resources: %w", err)
 	}
 
-	glog.V(1).Info("Reloading for AddOrUpdateResources()")
+	glog.V(3).Info("Reloading for AddOrUpdateResources()")
 
 	return allWarnings, nil
 }
@@ -740,7 +740,7 @@ func (cnf *Configurator) AddOrUpdateSpecialTLSSecrets(secret *api_v1.Secret, sec
 		return fmt.Errorf("Error when reloading NGINX when updating the special Secrets: %w", err)
 	}
 
-	glog.V(1).Info("Reloading for AddOrUpdateSpecialTLSSecrets()")
+	glog.V(3).Info("Reloading for AddOrUpdateSpecialTLSSecrets()")
 
 	return nil
 }
@@ -781,7 +781,7 @@ func (cnf *Configurator) DeleteIngress(key string) error {
 		return fmt.Errorf("Error when removing ingress %v: %w", key, err)
 	}
 
-	glog.V(1).Info("Reloading for DeleteIngress()")
+	glog.V(3).Info("Reloading for DeleteIngress()")
 
 	return nil
 }
