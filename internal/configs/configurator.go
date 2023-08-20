@@ -717,7 +717,7 @@ func (cnf *Configurator) AddOrUpdateResources(resources ExtendedResources) (Warn
 		return allWarnings, fmt.Errorf("Error when reloading NGINX when updating resources: %w", err)
 	}
 
-	glog.V(3).Info("Reloading for AddOrUpdateResources()")
+	glog.V(3).Infof("Reloading for AddOrUpdateResources(). Resources are %v", resources)
 
 	return allWarnings, nil
 }
