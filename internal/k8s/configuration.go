@@ -541,9 +541,7 @@ func (c *Configuration) DeleteVirtualServer(key string) ([]ResourceChange, []Con
 
 	delete(c.virtualServers, key)
 
-	changes, problems := c.rebuildHosts()
-
-	return changes, problems
+	return c.rebuildHosts()
 }
 
 // AddOrUpdateVirtualServerRoute adds or updates the VirtualServerRoute.
@@ -612,9 +610,9 @@ func (c *Configuration) AddOrUpdateGlobalConfiguration(gc *conf_v1alpha1.GlobalC
 
 	c.setGlobalConfigListenerMap()
 
-	tsListenerChanges, tsListenerProblems := c.rebuildListeners()
-	changes = append(changes, tsListenerChanges...)
-	problems = append(problems, tsListenerProblems...)
+	listenerChanges, listenerProblems := c.rebuildListeners()
+	changes = append(changes, listenerChanges...)
+	problems = append(problems, listenerProblems...)
 
 	hostChanges, hostProblems := c.rebuildHosts()
 	changes = append(changes, hostChanges...)

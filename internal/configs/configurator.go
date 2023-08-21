@@ -1245,8 +1245,6 @@ func (cnf *Configurator) UpdateConfig(cfgParams *ConfigParams, resources Extende
 func (cnf *Configurator) UpdateVirtualServers(updatedVSExes []*VirtualServerEx, deletedKeys []string) []error {
 	var errList []error
 	for _, vsEx := range updatedVSExes {
-		// -- DEBUGGING --
-		fmt.Printf("UpdatesVirtualServers()")
 		_, err := cnf.addOrUpdateVirtualServer(vsEx)
 		if err != nil {
 			errList = append(errList, fmt.Errorf("error adding or updating VirtualServer %v/%v: %w", vsEx.VirtualServer.Namespace, vsEx.VirtualServer.Name, err))

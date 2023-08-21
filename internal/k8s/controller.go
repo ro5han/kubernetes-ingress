@@ -1626,8 +1626,6 @@ func (lbc *LoadBalancerController) processChangesFromGlobalConfiguration(changes
 		switch impl := c.Resource.(type) {
 		case *VirtualServerConfiguration:
 			if c.Op == AddOrUpdate {
-				// -- DEBUGGING --
-				fmt.Printf("processChangesFromGlobalConfiguration()\n")
 				vsEx := lbc.createVirtualServerEx(impl.VirtualServer, impl.VirtualServerRoutes)
 
 				updatedVSExes = append(updatedVSExes, vsEx)
