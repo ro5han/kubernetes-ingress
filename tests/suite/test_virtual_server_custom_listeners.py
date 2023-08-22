@@ -110,6 +110,7 @@ class TestVirtualServerCustomListeners:
         global_config_file = f"{TEST_DATA}/virtual-server-custom-listeners/global-configuration.yaml"
         gc_resource = create_gc_from_yaml(kube_apis.custom_objects, global_config_file, "nginx-ingress")
         vs_custom_listeners = f"{TEST_DATA}/virtual-server-custom-listeners/virtual-server.yaml"
+
         # Create VS with custom listener (http-8085, https-8445)
         patch_virtual_server_from_yaml(
             kube_apis.custom_objects,
@@ -118,44 +119,35 @@ class TestVirtualServerCustomListeners:
             virtual_server_setup.namespace,
         )
         wait_before_test()
-        print(virtual_server_setup.backend_1_url_custom_ssl)
         resp_custom_https_port = requests.get(
             virtual_server_setup.backend_1_url_custom_ssl,
             headers={"host": virtual_server_setup.vs_host},
             allow_redirects=False,
             verify=False,
         )
-        print(virtual_server_setup.backend_1_url_custom)
         resp_custom_http_port = requests.get(
             virtual_server_setup.backend_1_url_custom,
             headers={"host": virtual_server_setup.vs_host},
         )
-        print(resp_custom_https_port.status_code)
-        print(resp_custom_https_port.text)
-        print(resp_custom_http_port.status_code)
-        print(resp_custom_http_port.text)
+        assert resp_custom_https_port.status_code == 200
+        assert resp_custom_http_port.status_code == 200
 
-        print(virtual_server_setup.backend_1_url_ssl)
         resp_default_https_port = requests.get(
             virtual_server_setup.backend_1_url_ssl,
             headers={"host": virtual_server_setup.vs_host},
             allow_redirects=False,
             verify=False,
         )
-        print(virtual_server_setup.backend_1_url)
         resp_default_http_port = requests.get(
             virtual_server_setup.backend_1_url,
             headers={"host": virtual_server_setup.vs_host},
         )
-        print(resp_default_https_port.status_code)
-        print(resp_default_https_port.text)
-        print(resp_default_http_port.status_code)
-        print(resp_default_http_port.text)
+        assert resp_default_https_port.status_code == 404
+        assert resp_default_http_port.status_code == 404
 
         delete_gc(kube_apis.custom_objects, gc_resource, "nginx-ingress")
-
         wait_before_test()
-        print(virtual_server_setup.backend_1_url_custom_ssl)
+
         with pytest.raises(Exception) as e:
             requests.get(
                 virtual_server_setup.backend_1_url_custom_ssl,
@@ -163,6 +155,7 @@ class TestVirtualServerCustomListeners:
                 allow_redirects=False,
                 verify=False,
             )
+            print(e.details())
         # assert "HTTPSConnectionPool(host='34.147.153.198', port=8445): Max retries exceeded with url: /backend1 (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x10f9f49d0>: Failed to establish a new connection: [Errno 61] Connection refused'))" == str(e.typevalue)
 
 
@@ -176,17 +169,15 @@ class TestVirtualServerCustomListeners:
         #     pass
         # else:
         #     assert False, f"Expected: ConnectionRefusedError for url {virtual_server_setup.backend_1_url_custom}"
-
-        response = read_vs(kube_apis.custom_objects, virtual_server_setup.namespace, virtual_server_setup)
-
+        # wait_before_test(60)
+        response = read_vs(kube_apis.custom_objects, virtual_server_setup.namespace, virtual_server_setup.vs_name)
+        print(response)
         delete_secret(kube_apis.v1, secret_name, virtual_server_setup.namespace)
         self.restore_default_vs(kube_apis, virtual_server_setup)
 
         assert (
-            response["status"]["reason"] == "Warning"
-            and response["status"]["message"] == "Listeners defined, but no GlobalConfiguration deployed"
+            response["status"]["reason"] == "AddedOrUpdatedWithWarning"
+            and response["status"]["state"] == "Warning"
+            and "Listeners defined, but no GlobalConfiguration is deployed" in response["status"]["message"]
         )
-        # assert resp_custom_https_port.status_code == 200
-        # assert resp_custom_http_port.status_code == 200
-        # assert resp_default_https_port.status_code == 404
-        # assert resp_default_http_port.status_code == 404
+
