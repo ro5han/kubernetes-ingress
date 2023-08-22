@@ -408,7 +408,7 @@ def crd_ingress_controller_with_ed(
             kube_apis.v1,
             ingress_controller_prerequisites.config_map["metadata"]["name"],
             ingress_controller_prerequisites.namespace,
-            f"{DEPLOYMENTS}/common/nginx-config.yaml",
+            f"{TEST_DATA}/common/nginx-config.yaml",
         )
         pytest.fail("IC setup failed")
 
@@ -427,7 +427,7 @@ def crd_ingress_controller_with_ed(
                 kube_apis.v1,
                 ingress_controller_prerequisites.config_map["metadata"]["name"],
                 ingress_controller_prerequisites.namespace,
-                f"{DEPLOYMENTS}/common/nginx-config.yaml",
+                f"{TEST_DATA}/common/nginx-config.yaml",
             )
 
     request.addfinalizer(fin)

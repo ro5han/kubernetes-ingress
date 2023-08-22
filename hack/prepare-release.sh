@@ -12,15 +12,8 @@ DOCS_TO_UPDATE_FOLDER=docs/content
 
 FILES_TO_UPDATE_IC_VERSION=(
     README.md
-    deployments/daemon-set/nginx-ingress.yaml
-    deployments/daemon-set/nginx-plus-ingress.yaml
-    deployments/deployment/nginx-ingress.yaml
-    deployments/deployment/nginx-plus-ingress.yaml
     charts/nginx-ingress/Chart.yaml
     charts/nginx-ingress/README.md
-    charts/nginx-ingress/values-icp.yaml
-    charts/nginx-ingress/values-nsm.yaml
-    charts/nginx-ingress/values-plus.yaml
     charts/nginx-ingress/values.yaml
 )
 

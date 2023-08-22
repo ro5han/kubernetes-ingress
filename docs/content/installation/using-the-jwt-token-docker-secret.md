@@ -53,7 +53,7 @@ You will need the following information from [MyF5](https://my.f5.com) for these
 
  ```shell
     kubectl get secret regcred --output=yaml
-    ```
+ ```
 
 1. You can now use the newly created Kubernetes secret in `helm` and `manifest` deployments.
 
@@ -87,7 +87,7 @@ If you are using `helm` for deployment, there are two main methods: using *sourc
 The [Helm installation page for NGINX Ingress Controller](https://docs.nginx.com/nginx-ingress-controller/installation/installation-with-helm/#managing-the-chart-via-sources) has a section describing how to use sources: these are the unique steps for Docker secrets using JWT tokens.
 
 1. Clone the NGINX [`kubernetes-ingress` repository](https://github.com/nginxinc/kubernetes-ingress).
-1. Navigate to the `deployments/helm-chart` folder of your local clone.
+1. Navigate to the `charts/nginx-ingress` folder of your local clone.
 1. Open the `values.yaml` file in an editor.
 
 You must change a few lines NGINX Ingress Controller with NGINX Plus to be deployed.
