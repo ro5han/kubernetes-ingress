@@ -946,6 +946,8 @@ func (cnf *Configurator) UpdateEndpoints(ingExes []*IngressEx) error {
 		return fmt.Errorf("error reloading NGINX when updating endpoints: %w", err)
 	}
 
+	glog.V(3).Info("Reloading for UpdateEndpoints(). Resources are %v", ingExes)
+
 	return nil
 }
 
@@ -980,6 +982,8 @@ func (cnf *Configurator) UpdateEndpointsMergeableIngress(mergeableIngresses []*M
 		return fmt.Errorf("error reloading NGINX when updating endpoints for %v: %w", mergeableIngresses, err)
 	}
 
+	glog.V(3).Info("Reloading for UpdateEndpointsMergeableIngress(). Resources are %v", mergeableIngresses)
+
 	return nil
 }
 
@@ -1011,6 +1015,8 @@ func (cnf *Configurator) UpdateEndpointsForVirtualServers(virtualServerExes []*V
 	if err := cnf.reload(nginx.ReloadForEndpointsUpdate); err != nil {
 		return fmt.Errorf("error reloading NGINX when updating endpoints: %w", err)
 	}
+
+	glog.V(3).Info("Reloading for UpdateEndpointsForVirtualServers(). Resource are %v", virtualServerExes)
 
 	return nil
 }
@@ -1057,6 +1063,9 @@ func (cnf *Configurator) UpdateEndpointsForTransportServers(transportServerExes 
 	if err := cnf.reload(nginx.ReloadForEndpointsUpdate); err != nil {
 		return fmt.Errorf("error reloading NGINX when updating endpoints: %w", err)
 	}
+
+	glog.V(3).Info("Reloading for UpdateEndpointsForTransportServers(). Resource are %v", transportServerExes)
+
 	return nil
 }
 
@@ -1292,6 +1301,8 @@ func (cnf *Configurator) BatchDeleteVirtualServers(deletedKeys []string) []error
 		errList = append(errList, fmt.Errorf("error when reloading NGINX for deleted VirtualServers: %w", err))
 	}
 
+	glog.V(3).Info("Reloading for BatchDeleteVirtualServers(). deletedKeys are %v", deletedKeys)
+
 	return errList
 }
 
@@ -1308,6 +1319,8 @@ func (cnf *Configurator) BatchDeleteIngresses(deletedKeys []string) []error {
 	if err := cnf.reload(nginx.ReloadForOtherUpdate); err != nil {
 		errList = append(errList, fmt.Errorf("error when reloading NGINX for deleted Ingresses: %w", err))
 	}
+
+	glog.V(3).Info("Reloading for BatchDeleteIngresses(). deletedKeys are %v", deletedKeys)
 
 	return errList
 }
