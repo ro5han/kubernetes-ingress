@@ -264,6 +264,8 @@ func (cnf *Configurator) AddOrUpdateIngress(ingEx *IngressEx) (Warnings, error) 
 		return warnings, fmt.Errorf("error reloading NGINX for %v/%v: %w", ingEx.Ingress.Namespace, ingEx.Ingress.Name, err)
 	}
 
+	glog.V(3).Infof("Reloading for AddOrUpdateIngress(). Resource is %s", ingEx.Ingress.Name)
+
 	return warnings, nil
 }
 
@@ -381,6 +383,8 @@ func (cnf *Configurator) AddOrUpdateMergeableIngress(mergeableIngs *MergeableIng
 	if err := cnf.reload(nginx.ReloadForOtherUpdate); err != nil {
 		return warnings, fmt.Errorf("error reloading NGINX for %v/%v: %w", mergeableIngs.Master.Ingress.Namespace, mergeableIngs.Master.Ingress.Name, err)
 	}
+
+	glog.V(3).Infof("Reloading for AddOrUpdateMergeableIngress(). Resources are %v", mergeableIngs)
 
 	return warnings, nil
 }
@@ -521,6 +525,8 @@ func (cnf *Configurator) AddOrUpdateVirtualServer(virtualServerEx *VirtualServer
 		return warnings, fmt.Errorf("error reloading NGINX for VirtualServer %v/%v: %w", virtualServerEx.VirtualServer.Namespace, virtualServerEx.VirtualServer.Name, err)
 	}
 
+	glog.V(3).Infof("Reloading for AddOrUpdateVirtualServer(). Resource is %v", virtualServerEx)
+
 	return warnings, nil
 }
 
@@ -572,6 +578,8 @@ func (cnf *Configurator) AddOrUpdateVirtualServers(virtualServerExes []*VirtualS
 	if err := cnf.reload(nginx.ReloadForOtherUpdate); err != nil {
 		return allWarnings, fmt.Errorf("error when reloading NGINX when updating Policy: %w", err)
 	}
+
+	glog.V(3).Infof("Reloading for AddOrUpdateVirtualServerS(). Resources are %v", virtualServerExes)
 
 	return allWarnings, nil
 }
@@ -653,6 +661,9 @@ func (cnf *Configurator) AddOrUpdateTransportServer(transportServerEx *Transport
 	if err := cnf.reload(nginx.ReloadForOtherUpdate); err != nil {
 		return nil, fmt.Errorf("error reloading NGINX for TransportServer %v/%v: %w", transportServerEx.TransportServer.Namespace, transportServerEx.TransportServer.Name, err)
 	}
+
+	glog.V(3).Infof("Reloading for AddOrUpdateTransportServer(). Resources is %s", transportServerEx.TransportServer.Name)
+
 	return warnings, nil
 }
 
@@ -778,6 +789,9 @@ func (cnf *Configurator) AddOrUpdateResources(resources ExtendedResources) (Warn
 	if err := cnf.reload(nginx.ReloadForOtherUpdate); err != nil {
 		return nil, fmt.Errorf("error when reloading NGINX when updating resources: %w", err)
 	}
+
+	glog.V(3).Infof("Reloading for AddOrUpdateResources(). Resources are %v", resources)
+
 	return allWarnings, nil
 }
 
@@ -798,6 +812,8 @@ func (cnf *Configurator) AddOrUpdateSpecialTLSSecrets(secret *api_v1.Secret, sec
 	if err := cnf.reload(nginx.ReloadForOtherUpdate); err != nil {
 		return fmt.Errorf("error when reloading NGINX when updating the special Secrets: %w", err)
 	}
+
+	glog.V(3).Infof("Reloading for AddOrUpdateSpecialTLSSecrets(). Resources is %v SecretNames are %v", secret, secretNames)
 
 	return nil
 }
@@ -840,6 +856,8 @@ func (cnf *Configurator) DeleteIngress(key string, skipReload bool) error {
 		}
 	}
 
+	glog.V(3).Infof("Reloading for DeleteIngress(). Resource is %s SkipReload=%t", key, skipReload)
+
 	return nil
 }
 
@@ -859,6 +877,8 @@ func (cnf *Configurator) DeleteVirtualServer(key string, skipReload bool) error 
 		}
 	}
 
+	glog.V(3).Infof("Reloading for DeleteVirtualServer(). Resource is %s SkipReload=%t", key, skipReload)
+
 	return nil
 }
 
@@ -877,6 +897,8 @@ func (cnf *Configurator) DeleteTransportServer(key string) error {
 	if err != nil {
 		return fmt.Errorf("error when removing TransportServer %v: %w", key, err)
 	}
+
+	glog.V(3).Infof("Reloading for DeleteTransportServer(). Resource is %s", key)
 
 	return nil
 }
@@ -1225,6 +1247,8 @@ func (cnf *Configurator) UpdateConfig(cfgParams *ConfigParams, resources Extende
 		return allWarnings, fmt.Errorf("error when updating config from ConfigMap: %w", err)
 	}
 
+	glog.V(3).Infof("Reloading for UpdateConfig(). Resource is %v ConfigParams are %v", resources, cfgParams)
+
 	return allWarnings, nil
 }
 
@@ -1248,6 +1272,8 @@ func (cnf *Configurator) UpdateTransportServers(updatedTSExes []*TransportServer
 	if err := cnf.reload(nginx.ReloadForOtherUpdate); err != nil {
 		errList = append(errList, fmt.Errorf("error when updating TransportServers: %w", err))
 	}
+
+	glog.V(3).Infof("Reloading for UpdateTransportServerS(). Resources are %v deletedKeys are %v", updatedTSExes, deletedKeys)
 
 	return errList
 }
@@ -1400,6 +1426,9 @@ func (cnf *Configurator) AddOrUpdateSpiffeCerts(svidResponse *workloadapi.X509Co
 	if err != nil {
 		return fmt.Errorf("error when reloading NGINX when updating the SPIFFE Certs: %w", err)
 	}
+
+	glog.V(3).Infof("Reloading for AddOrUpdateSpiffeCerts(). svidResponse is %v", svidResponse)
+
 	return nil
 }
 
@@ -1499,6 +1528,8 @@ func (cnf *Configurator) AddOrUpdateAppProtectResource(resource *unstructured.Un
 		return warnings, fmt.Errorf("error when reloading NGINX when updating %v %v/%v: %w", resource.GetKind(), resource.GetNamespace(), resource.GetName(), err)
 	}
 
+	glog.V(3).Infof("Reloading for AddOrUpdateAppProtectResource(). Resource is %v Ingresses are %v MergableIngresses are %v VirtualServers are %v", resource, ingExes, mergeableIngresses, vsExes)
+
 	return warnings, nil
 }
 
@@ -1591,6 +1622,8 @@ func (cnf *Configurator) RefreshAppProtectUserSigs(
 		fmt.Fprintf(&builder, "app_protect_user_defined_signatures %s;\n", fName)
 	}
 	cnf.nginxManager.CreateAppProtectResourceFile(appProtectUserSigIndex, []byte(builder.String()))
+	glog.V(3).Infof("Reloading for RefreshAppProtectUserSigs(). userSigs is %v delPols is %v Ingresses are %v MergableIngresses are %v VirtualServers are %v",
+		userSigs, delPols, ingExes, mergeableIngresses, vsExes)
 	return allWarnings, cnf.reload(nginx.ReloadForOtherUpdate)
 }
 
@@ -1625,6 +1658,7 @@ func (cnf *Configurator) AddInternalRouteConfig() error {
 	if err := cnf.reload(nginx.ReloadForOtherUpdate); err != nil {
 		return fmt.Errorf("error when reloading nginx: %w", err)
 	}
+	glog.V(3).Infof("Reloading for AddInternalRouteConfig()")
 	return nil
 }
 
