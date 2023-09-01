@@ -1504,6 +1504,28 @@
           "examples": [
             "http"
           ]
+        },
+        "service": {
+          "type": "object",
+          "default": {},
+          "properties": {
+            "create": {
+              "type": "boolean",
+              "default": false,
+              "title": "The create",
+              "examples": [
+                true
+              ]
+            },
+            "name": {
+              "type": "string",
+              "default": "prometheus-service",
+              "title": "Prometheus service name",
+              "example": [
+                "prometheus-service"
+              ]
+            }
+          }
         }
       },
       "examples": [

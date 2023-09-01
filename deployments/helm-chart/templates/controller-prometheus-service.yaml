@@ -1,0 +1,17 @@
+{{- if and .Values.controller.serviceMonitor.create .Values.prometheus.create .Values.prometheus.service.create}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: "nic-prometheus-service"
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: "nic-prometheus-service"
+spec:
+  ports:
+  - name: prometheus-svc
+    protocol: TCP
+    port: 9113
+    targetPort: 9113
+  selector:
+    {{- include "nginx-ingress.selectorLabels" . | nindent 4 }}
+{{- end }}

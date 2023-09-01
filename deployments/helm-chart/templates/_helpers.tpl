@@ -129,3 +129,11 @@ Expand image name.
 {{- printf "%s:%s" .Values.controller.image.repository (include "nginx-ingress.tag" .) -}}
 {{- end -}}
 {{- end -}}
+
+{{- define "nginx-ingress.prometheus.service.name" -}}
+{{- include .Values.prometheus.service.name . -}}
+{{- end -}}
+
+{{- define "nginx-ingress.prometheus.port" -}}
+{{- include .Values.prometheus.port . -}}
+{{- end -}}
