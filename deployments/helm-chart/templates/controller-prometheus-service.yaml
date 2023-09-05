@@ -5,7 +5,7 @@ metadata:
   name: "nic-prometheus-service"
   namespace: {{ .Release.Namespace }}
   labels:
-    app: "nic-prometheus-service"
+    service: "nic-prometheus-service"
 spec:
   ports:
   - name: prometheus-svc

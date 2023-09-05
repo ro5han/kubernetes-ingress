@@ -449,12 +449,12 @@ controller:
 
     ## Kubernetes object labels to attach to the serviceMonitor object.
     labels:
-      app: "nic-prometheus-service-monitor"
+      product: "nic"
 
     ## A set of labels to allow the selection of endpoints for the ServiceMonitor.
     selectorMatchLabels:
       # Default name generated for the Prometheus Service for ServiceMonitor to watch.
-      app: "nic-prometheus-service"
+      service: "nic-prometheus-service"
 
     ## A list of endpoints allowed as part of this ServiceMonitor.
     endpoints:
