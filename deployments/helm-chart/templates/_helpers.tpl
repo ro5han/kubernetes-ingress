@@ -133,7 +133,3 @@ Expand image name.
 {{- define "nginx-ingress.prometheus.serviceName" -}}
 {{- printf "%s-%s" (include "nginx-ingress.fullname" .) "prometheus-service"  -}}
 {{- end -}}
-
-{{- define "nginx-ingress.prometheus.port" -}}
-{{- include .Values.prometheus.port . -}}
-{{- end -}}
