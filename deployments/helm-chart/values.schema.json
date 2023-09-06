@@ -1517,14 +1517,7 @@
                 true
               ]
             },
-            "name": {
-              "type": "string",
-              "default": "prometheus-service",
-              "title": "Prometheus service name",
-              "example": [
-                "prometheus-service"
-              ]
-            }
+            "labels": {}
           }
         }
       },

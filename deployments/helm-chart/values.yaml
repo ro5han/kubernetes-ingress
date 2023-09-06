@@ -445,20 +445,18 @@ controller:
 
   serviceMonitor:
     ## Creates a serviceMonitor to expose statistics on the kubernetes pods.
-    create: true
+    create: false
 
     ## Kubernetes object labels to attach to the serviceMonitor object.
-    labels:
-      product: "nic"
+    labels: {}
 
     ## A set of labels to allow the selection of endpoints for the ServiceMonitor.
-    selectorMatchLabels:
+    selectorMatchLabels: {}
       # Default name generated for the Prometheus Service for ServiceMonitor to watch.
-      service: "nic-prometheus-service"
 
     ## A list of endpoints allowed as part of this ServiceMonitor.
     endpoints:
-      - port: prometheus-svc
+      - port: prometheus
 
 rbac:
   ## Configures RBAC.
@@ -482,8 +480,7 @@ prometheus:
     ## Requires controller.serviceMonitor.create=true
     create: false
 
-    ## Name of service.
-    #name: "prometheus-service"
+    labels: {}
 
 serviceInsight:
   ## Expose NGINX Plus Service Insight endpoint.

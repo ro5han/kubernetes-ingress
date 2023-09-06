@@ -130,8 +130,8 @@ Expand image name.
 {{- end -}}
 {{- end -}}
 
-{{- define "nginx-ingress.prometheus.service.name" -}}
-{{- include .Values.prometheus.service.name . -}}
+{{- define "nginx-ingress.prometheus.serviceName" -}}
+{{- printf "%s-%s" (include "nginx-ingress.fullname" .) "prometheus-service"  -}}
 {{- end -}}
 
 {{- define "nginx-ingress.prometheus.port" -}}
