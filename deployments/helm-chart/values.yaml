@@ -368,11 +368,7 @@ controller:
       targetPort: 443
 
     ## A list of custom ports to expose through the Ingress Controller service. Follows the conventional Kubernetes yaml syntax for service ports.
-    customPorts:
-      - port: 9113
-        targetPort: 9113
-        protocol: TCP
-        name: prometheus
+    customPorts: []
 
   serviceAccount:
     ## The annotations of the service account of the Ingress Controller pods.
@@ -455,8 +451,7 @@ controller:
       # Default name generated for the Prometheus Service for ServiceMonitor to watch.
 
     ## A list of endpoints allowed as part of this ServiceMonitor.
-    endpoints:
-      - port: prometheus
+    endpoints: []
 
 rbac:
   ## Configures RBAC.
