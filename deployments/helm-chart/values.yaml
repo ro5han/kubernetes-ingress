@@ -448,7 +448,6 @@ controller:
 
     ## A set of labels to allow the selection of endpoints for the ServiceMonitor.
     selectorMatchLabels: {}
-      # Default name generated for the Prometheus Service for ServiceMonitor to watch.
 
     ## A list of endpoints allowed as part of this ServiceMonitor.
     endpoints: []
@@ -472,7 +471,7 @@ prometheus:
 
   service:
     ## Creates a ClusterIP Service to expose Prometheus metrics internally
-    ## Requires controller.serviceMonitor.create=true
+    ## Requires prometheus.create=true
     create: false
 
     labels: {}
