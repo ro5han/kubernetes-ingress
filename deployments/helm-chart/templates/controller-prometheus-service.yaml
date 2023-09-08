@@ -10,6 +10,7 @@ metadata:
         {{- toYaml .Values.prometheus.service.labels | nindent 4 }}
     {{- end }}
 spec:
+  clusterIP: None
   ports:
   - name: prometheus
     protocol: TCP
