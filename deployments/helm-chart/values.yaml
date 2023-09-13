@@ -439,19 +439,6 @@ controller:
   ## Configure root filesystem as read-only and add volumes for temporary data.
   readOnlyRootFilesystem: false
 
-  serviceMonitor:
-    ## Creates a serviceMonitor to expose statistics on the kubernetes pods.
-    create: false
-
-    ## Kubernetes object labels to attach to the serviceMonitor object.
-    labels: {}
-
-    ## A set of labels to allow the selection of endpoints for the ServiceMonitor.
-    selectorMatchLabels: {}
-
-    ## A list of endpoints allowed as part of this ServiceMonitor.
-    endpoints: []
-
 rbac:
   ## Configures RBAC.
   create: true
@@ -462,6 +449,10 @@ prometheus:
 
   ## Configures the port to scrape the metrics.
   port: 9113
+
+  ## Name of the port exposed by the service.
+  ## Used by the ServiceMonitor's `endpoints` field to discover service endpoints.
+  portName: "prometheus"
 
   ## Specifies the namespace/name of a Kubernetes TLS Secret which will be used to protect the Prometheus endpoint.
   secret: ""
@@ -487,8 +478,8 @@ prometheus:
     selectorMatchLabels: {}
 
     ## A list of endpoints allowed as part of this ServiceMonitor.
-    endpoints:
-      - port: prometheus
+    endpoints: []
+    # - port: prometheus
 
 serviceInsight:
   ## Expose NGINX Plus Service Insight endpoint.

@@ -1446,6 +1446,14 @@
             9113
           ]
         },
+        "portName": {
+          "type": "string",
+          "default": "prometheus",
+          "title": "The name of the port",
+          "examples": [
+            "prometheus"
+          ]
+        },
         "secret": {
           "type": "string",
           "default": "",
@@ -1768,6 +1776,7 @@
       "prometheus": {
         "create": true,
         "port": 9113,
+        "portName": "prometheus",
         "secret": "",
         "scheme": "http",
         "service": {
