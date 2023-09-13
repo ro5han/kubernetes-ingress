@@ -1446,14 +1446,6 @@
             9113
           ]
         },
-        "portName": {
-          "type": "string",
-          "default": "prometheus",
-          "title": "The name of the port",
-          "examples": [
-            "prometheus"
-          ]
-        },
         "secret": {
           "type": "string",
           "default": "",
@@ -1480,6 +1472,14 @@
               "title": "The create",
               "examples": [
                 true
+              ]
+            },
+            "endpoint": {
+              "type": "string",
+              "default": "prometheus",
+              "title": "The name of the port endpoint",
+              "examples": [
+                "prometheus"
               ]
             },
             "labels": {
@@ -1776,11 +1776,11 @@
       "prometheus": {
         "create": true,
         "port": 9113,
-        "portName": "prometheus",
         "secret": "",
         "scheme": "http",
         "service": {
           "create": false,
+          "endpoint": "prometheus",
           "labels": {}
         },
         "serviceMonitor": {
