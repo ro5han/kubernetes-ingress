@@ -461,11 +461,8 @@ prometheus:
     ## Requires prometheus.create=true
     create: false
 
-    ## Name of the endpoint exposed by the service.
-    ## Used by the ServiceMonitor's `endpoints` field to discover service endpoints.
-    endpoint: "prometheus"
-
-    labels: {}
+    labels:
+      service: "nginx-ingress-prometheus-service"
 
   serviceMonitor:
     ## Creates a serviceMonitor to expose statistics on the kubernetes pods.
@@ -475,11 +472,13 @@ prometheus:
     labels: {}
 
     ## A set of labels to allow the selection of endpoints for the ServiceMonitor.
-    selectorMatchLabels: {}
+    selectorMatchLabels:
+      service: "nginx-ingress-prometheus-service"
 
     ## A list of endpoints allowed as part of this ServiceMonitor.
-    endpoints: []
-    # - port: prometheus
+    ## Matches on the name of a Service port.
+    endpoints:
+     - port: prometheus
 
 serviceInsight:
   ## Expose NGINX Plus Service Insight endpoint.

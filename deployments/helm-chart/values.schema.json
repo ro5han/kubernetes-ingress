@@ -1474,14 +1474,6 @@
                 true
               ]
             },
-            "endpoint": {
-              "type": "string",
-              "default": "prometheus",
-              "title": "The name of the port endpoint",
-              "examples": [
-                "prometheus"
-              ]
-            },
             "labels": {
               "type": "object",
               "default": {},
@@ -1780,7 +1772,6 @@
         "scheme": "http",
         "service": {
           "create": false,
-          "endpoint": "prometheus",
           "labels": {}
         },
         "serviceMonitor": {
