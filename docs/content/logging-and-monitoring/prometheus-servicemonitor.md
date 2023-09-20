@@ -29,7 +29,7 @@ curl https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/$
 # Install
 To configure a `ServiceMonitor` resource with your Helm to installation, set the following paramaters:
 ```shell
---set prometheus.service.create=true 
+--set prometheus.service.create=true
 --set prometheus.serviceMonitor.create=true
 --set prometheus.serviceMonitor.labels.<you_custom_label_key>="<you_custom_label_value>"
 ```
