@@ -31,7 +31,7 @@ To configure a `ServiceMonitor` resource with your Helm to installation, set the
 ```shell
 --set prometheus.service.create=true
 --set prometheus.serviceMonitor.create=true
---set prometheus.serviceMonitor.labels.<you_custom_label_key>="<you_custom_label_value>"
+--set prometheus.serviceMonitor.labels.<your_custom_label_key>="<your_custom_label_value>"
 ```
 
 This will deploy:
@@ -53,7 +53,7 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   labels:
-    product: nic
+    your_custom_label_key: your_custom_label_value
   name: <you-release>-nginx-ingress-controller
 spec:
   selector:
@@ -93,5 +93,5 @@ spec:
   serviceMonitorNamespaceSelector: {} ## all namespaces
   serviceMonitorSelector:
     matchLabels:
-      product: nic # Matches on the label set for the ServiceMonitor resource
+      your_custom_label_key: your_custom_label_value # Matches on the label set for the ServiceMonitor resource
 ```
