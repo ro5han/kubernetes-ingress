@@ -49,21 +49,21 @@ command-line argument to `false` and skip this section.
    resources:
 
     ```shell
-    kubectl apply -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/v3.2.1/deploy/crds.yaml
+    kubectl apply -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/v3.3.0/deploy/crds.yaml
     ```
 
 2. If you would like to use the NGINX App Protect WAF module, you will need to create custom resource definitions for
    `APPolicy`, `APLogConf` and `APUserSig`:
 
     ```shell
-    kubectl apply -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/v3.2.1/deploy/crds-nap-waf.yaml
+    kubectl apply -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/v3.3.0/deploy/crds-nap-waf.yaml
     ```
 
 3. If you would like to use the NGINX App Protect DoS module, you will need to create custom resource definitions for
    `APDosPolicy`, `APDosLogConf` and `DosProtectedResource`:
 
     ```shell
-    kubectl apply -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/v3.2.1/deploy/crds-nap-dos.yaml
+    kubectl apply -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/v3.3.0/deploy/crds-nap-dos.yaml
     ```
 
 ---
@@ -88,7 +88,7 @@ There are multiple sample deployment files available in the repository. Choose t
 This is a default deployment file. It deploys the NGINX Ingress Controller as a Deployment.
 
 ```shell
-kubectl apply -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/v3.2.1/deploy/default/deploy.yaml
+kubectl apply -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/v3.3.0/deploy/default/deploy.yaml
 ```
 
 {{%/tab%}}
@@ -98,7 +98,7 @@ kubectl apply -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/v
 This is a default daemonset file. It deploys the NGINX Ingress Controller as a DaemonSet.
 
 ```shell
-kubectl apply -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/v3.2.1/deploy/default/daemonset.yaml
+kubectl apply -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/v3.3.0/deploy/default/daemonset.yaml
 ```
 
 {{%/tab%}}
@@ -108,7 +108,7 @@ kubectl apply -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/v
 Deploys NGINX Ingress Controller using a nodeSelector to deploy the controller on Azure nodes.
 
 ```shell
-kubectl apply -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/v3.2.1/deploy/azure/deploy.yaml
+kubectl apply -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/v3.3.0/deploy/azure/deploy.yaml
 ```
 
 {{%/tab%}}
@@ -119,7 +119,7 @@ kubectl apply -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/v
   Network Load Balancer (NLB).
 
 ```shell
-kubectl apply -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/v3.2.1/deploy/aws-nlb/deploy.yaml
+kubectl apply -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/v3.3.0/deploy/aws-nlb/deploy.yaml
 ```
 
 {{%/tab%}}
@@ -129,7 +129,7 @@ kubectl apply -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/v
 Deploys NGINX Ingress Controller with OpenID Connect (OIDC) authentication enabled.
 
 ```shell
-kubectl apply -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/v3.2.1/deploy/oidc/deploy.yaml
+kubectl apply -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/v3.3.0/deploy/oidc/deploy.yaml
 ```
 
 {{%/tab%}}
@@ -141,7 +141,7 @@ NGINX Plus Docker registry, and the `imagePullSecretName` is the name of the sec
 The secret must be created in the same namespace as the NGINX Ingress Controller.
 
 ```shell
-kubectl apply -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/v3.2.1/deploy/nginx-plus/deploy.yaml
+kubectl apply -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/v3.3.0/deploy/nginx-plus/deploy.yaml
 ```
 
 {{%/tab%}}
@@ -153,7 +153,7 @@ Docker registry, and the `imagePullSecretName` is the name of the secret to use 
 created in the same namespace as the NGINX Ingress Controller.
 
 ```shell
-kubectl apply -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/v3.2.1/deploy/appprotect-waf/deploy.yaml
+kubectl apply -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/v3.3.0/deploy/appprotect-waf/deploy.yaml
 ```
 
 {{%/tab%}}
@@ -165,7 +165,7 @@ Docker registry, and the `imagePullSecretName` is the name of the secret to use 
 created in the same namespace as the NGINX Ingress Controller.
 
 ```shell
-kubectl apply -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/v3.2.1/deploy/appprotect-dos/deploy.yaml
+kubectl apply -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/v3.3.0/deploy/appprotect-dos/deploy.yaml
 ```
 
 {{%/tab%}}
@@ -175,7 +175,7 @@ kubectl apply -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/v
 Deploys NGINX Ingress Controller with a read-only filesystem.
 
 ```shell
-kubectl apply -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/v3.2.1/deploy/read-only-fs/deploy.yaml
+kubectl apply -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/v3.3.0/deploy/read-only-fs/deploy.yaml
 ```
 
 {{%/tab%}}
@@ -185,7 +185,7 @@ kubectl apply -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/v
 Deploys NGINX Ingress Controller using a Service type of `NodePort`.
 
 ```shell
-kubectl apply -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/v3.2.1/deploy/nodeport/deploy.yaml
+kubectl apply -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/v3.3.0/deploy/nodeport/deploy.yaml
 ```
 
 {{%/tab%}}
@@ -197,7 +197,7 @@ Deploys NGINX Ingress Controller using the `edge` tag from Docker Hub. See the
 for more information on the different tags.
 
 ```shell
-kubectl apply -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/v3.2.1/deploy/edge/deploy.yaml
+kubectl apply -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/v3.3.0/deploy/edge/deploy.yaml
 ```
 
 {{%/tab%}}
@@ -207,7 +207,7 @@ kubectl apply -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/v
 Deploys NGINX Ingress Controller with Service Insight enabled.
 
 ```shell
-kubectl apply -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/v3.2.1/deploy/service-insight/deploy.yaml
+kubectl apply -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/v3.3.0/deploy/service-insight/deploy.yaml
 ```
 
 {{%/tab%}}
@@ -217,7 +217,7 @@ kubectl apply -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/v
 Deploys NGINX Ingress Controller with External DNS enabled.
 
 ```shell
-kubectl apply -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/v3.2.1/deploy/external-dns/deploy.yaml
+kubectl apply -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/v3.3.0/deploy/external-dns/deploy.yaml
 ```
 
 {{%/tab%}}
@@ -305,5 +305,5 @@ To access the Ingress Controller, use an IP address of any node of the cluster a
     {{<note>}} This step will also remove all associated Custom Resources. {{</note>}}
 
     ```shell
-    kubectl delete -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/v3.2.1/deploy/crds.yaml
+    kubectl delete -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/v3.3.0/deploy/crds.yaml
     ```

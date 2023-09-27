@@ -91,7 +91,7 @@ annotations:
 or you can use the provided `yaml` file in the `deploy` directory.
 
 ```console
-kubectl apply -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/v3.2.1/deploy/openservicemesh/deploy.yaml
+kubectl apply -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/v3.3.0/deploy/openservicemesh/deploy.yaml
 ```
 
 ### Sample deployment file with required annotation

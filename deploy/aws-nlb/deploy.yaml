@@ -9,7 +9,7 @@ metadata:
   labels:
     app.kubernetes.io/instance: nginx-ingress
     app.kubernetes.io/name: nginx-ingress
-    app.kubernetes.io/version: 3.2.1
+    app.kubernetes.io/version: 3.3.0
   name: nginx-ingress
   namespace: nginx-ingress
 ---
@@ -19,7 +19,7 @@ metadata:
   labels:
     app.kubernetes.io/instance: nginx-ingress
     app.kubernetes.io/name: nginx-ingress
-    app.kubernetes.io/version: 3.2.1
+    app.kubernetes.io/version: 3.3.0
   name: nginx-ingress
 rules:
 - apiGroups:
@@ -139,7 +139,7 @@ metadata:
   labels:
     app.kubernetes.io/instance: nginx-ingress
     app.kubernetes.io/name: nginx-ingress
-    app.kubernetes.io/version: 3.2.1
+    app.kubernetes.io/version: 3.3.0
   name: nginx-ingress
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -160,7 +160,7 @@ metadata:
   labels:
     app.kubernetes.io/instance: nginx-ingress
     app.kubernetes.io/name: nginx-ingress
-    app.kubernetes.io/version: 3.2.1
+    app.kubernetes.io/version: 3.3.0
   name: nginx-ingress
   namespace: nginx-ingress
 ---
@@ -170,7 +170,7 @@ metadata:
   labels:
     app.kubernetes.io/instance: nginx-ingress
     app.kubernetes.io/name: nginx-ingress
-    app.kubernetes.io/version: 3.2.1
+    app.kubernetes.io/version: 3.3.0
   name: nginx-ingress-leader-election
   namespace: nginx-ingress
 ---
@@ -183,7 +183,7 @@ metadata:
   labels:
     app.kubernetes.io/instance: nginx-ingress
     app.kubernetes.io/name: nginx-ingress
-    app.kubernetes.io/version: 3.2.1
+    app.kubernetes.io/version: 3.3.0
   name: nginx-ingress-controller
   namespace: nginx-ingress
 spec:
@@ -208,7 +208,7 @@ metadata:
   labels:
     app.kubernetes.io/instance: nginx-ingress
     app.kubernetes.io/name: nginx-ingress
-    app.kubernetes.io/version: 3.2.1
+    app.kubernetes.io/version: 3.3.0
   name: nginx-ingress-controller
   namespace: nginx-ingress
 spec:
@@ -274,7 +274,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.name
-        image: nginx/nginx-ingress:3.2.1
+        image: nginx/nginx-ingress:3.3.0
         imagePullPolicy: IfNotPresent
         name: nginx-ingress
         ports:
@@ -322,7 +322,7 @@ metadata:
   labels:
     app.kubernetes.io/instance: nginx-ingress
     app.kubernetes.io/name: nginx-ingress
-    app.kubernetes.io/version: 3.2.1
+    app.kubernetes.io/version: 3.3.0
   name: nginx
 spec:
   controller: nginx.org/ingress-controller

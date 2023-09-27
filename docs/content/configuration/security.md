@@ -63,5 +63,5 @@ via `controller.readOnlyRootFilesystem`.
 If you prefer to use manifests instead of Helm, you can use the following manifest to enable this feature:
 
 ```shell
-kubectl apply -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/v3.2.1/deploy/read-only-fs/deploy.yaml
+kubectl apply -f https://raw.githubusercontent.com/nginxinc/kubernetes-ingress/v3.3.0/deploy/read-only-fs/deploy.yaml
 ```
