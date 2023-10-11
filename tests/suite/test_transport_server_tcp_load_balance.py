@@ -608,7 +608,7 @@ class TestTransportServerTcpLoadBalance:
 
         host = host.strip("[]")
         with socket.create_connection((host, port)) as sock:
-            with ssl.SSLContext() as ctx:
+                ctx = ssl.SSLContext()
                 ssock = ctx.wrap_socket(sock)
                 print(ssock.version())
                 ssock.sendall(b"connect")
