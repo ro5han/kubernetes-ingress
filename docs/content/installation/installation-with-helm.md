@@ -12,7 +12,7 @@ docs: "DOCS-602"
 
 This chart deploys the NGINX Ingress Controller in your Kubernetes cluster.
 
-{{< caution >}}
+{{< important >}}
 As of Release 3.3.0 of the Ingress Controller, our Helm chart is now on v1.0.0
 
 Changes have been made to the following values in our `values.yaml` file:
@@ -22,7 +22,7 @@ Changes have been made to the following values in our `values.yaml` file:
 
 If you use a custom name for your ingress class, please set it using the new `controller.ingressClass.name`
 
-{{< /caution >}}
+{{< /important >}}
 
 ## Prerequisites
 
