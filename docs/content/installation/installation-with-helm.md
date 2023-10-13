@@ -12,6 +12,18 @@ docs: "DOCS-602"
 
 This chart deploys the NGINX Ingress Controller in your Kubernetes cluster.
 
+{{< caution >}}
+As of Release 3.3.0 of the Ingress Controller, our Helm chart is now on v1.0.0
+
+Changes have been made to the following values in our `values.yaml` file:
+
+1. `controller.ingressClass` is now represented as `controller.ingressClass.name`
+2. `controller.serviceMonitor` is now `prometheus.serviceMonitor`
+
+If you use a custom name for your ingress class, please set it using the new `controller.ingressClass.name`
+
+{{< /caution >}}
+
 ## Prerequisites
 
 **Note** All documentation should only be used with the latest stable release, indicated on

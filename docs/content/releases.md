@@ -34,6 +34,17 @@ This releases updates NGINX Plus to R30 P1 and dependencies to mitigate HTTP/2 R
 
 ### <i class="fa-solid fa-magnifying-glass"></i> Overview
 
+{{< caution >}}
+As of Release 3.3.0 of the Ingress Controller, our Helm chart is now on v1.0.0
+
+Changes have been made to the following values in our `values.yaml` file:
+
+1. `controller.ingressClass` is now represented as `controller.ingressClass.name`
+2. `controller.serviceMonitor` is now `prometheus.serviceMonitor`
+
+If you use a custom name for your ingress class, please set it using the new `controller.ingressClass.name`
+{{< /caution >}}
+
 With release 3.3 the NGINX Ingress Controller continues to advance capabilities for an ever-demanding set of use cases
 that go beyond simple layer 7 routing for services running exclusively in Kubernetes.
 
