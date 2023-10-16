@@ -9,7 +9,7 @@ metadata:
   labels:
     app.kubernetes.io/instance: nginx-ingress
     app.kubernetes.io/name: nginx-ingress
-    app.kubernetes.io/version: 3.3.0
+    app.kubernetes.io/version: 3.3.1
   name: nginx-ingress
   namespace: nginx-ingress
 ---
@@ -19,7 +19,7 @@ metadata:
   labels:
     app.kubernetes.io/instance: nginx-ingress
     app.kubernetes.io/name: nginx-ingress
-    app.kubernetes.io/version: 3.3.0
+    app.kubernetes.io/version: 3.3.1
   name: nginx-ingress
 rules:
 - apiGroups:
@@ -156,7 +156,7 @@ metadata:
   labels:
     app.kubernetes.io/instance: nginx-ingress
     app.kubernetes.io/name: nginx-ingress
-    app.kubernetes.io/version: 3.3.0
+    app.kubernetes.io/version: 3.3.1
   name: nginx-ingress
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -174,7 +174,7 @@ metadata:
   labels:
     app.kubernetes.io/instance: nginx-ingress
     app.kubernetes.io/name: nginx-ingress
-    app.kubernetes.io/version: 3.3.0
+    app.kubernetes.io/version: 3.3.1
   name: nginx-ingress
   namespace: nginx-ingress
 ---
@@ -184,7 +184,7 @@ metadata:
   labels:
     app.kubernetes.io/instance: nginx-ingress
     app.kubernetes.io/name: nginx-ingress
-    app.kubernetes.io/version: 3.3.0
+    app.kubernetes.io/version: 3.3.1
   name: nginx-ingress-leader-election
   namespace: nginx-ingress
 ---
@@ -194,7 +194,7 @@ metadata:
   labels:
     app.kubernetes.io/instance: nginx-ingress
     app.kubernetes.io/name: nginx-ingress
-    app.kubernetes.io/version: 3.3.0
+    app.kubernetes.io/version: 3.3.1
   name: nginx-ingress-controller
   namespace: nginx-ingress
 spec:
@@ -219,7 +219,7 @@ metadata:
   labels:
     app.kubernetes.io/instance: nginx-ingress
     app.kubernetes.io/name: nginx-ingress
-    app.kubernetes.io/version: 3.3.0
+    app.kubernetes.io/version: 3.3.1
   name: nginx-ingress-controller
   namespace: nginx-ingress
 spec:
@@ -273,6 +273,8 @@ spec:
         - -enable-cert-manager=false
         - -enable-oidc=false
         - -enable-external-dns=true
+        - -default-http-listener-port=80
+        - -default-https-listener-port=443
         - -ready-status=true
         - -ready-status-port=8081
         - -enable-latency-metrics=false
@@ -285,7 +287,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.name
-        image: nginx/nginx-ingress:3.3.0
+        image: nginx/nginx-ingress:3.3.1
         imagePullPolicy: IfNotPresent
         name: nginx-ingress
         ports:
@@ -333,7 +335,7 @@ metadata:
   labels:
     app.kubernetes.io/instance: nginx-ingress
     app.kubernetes.io/name: nginx-ingress
-    app.kubernetes.io/version: 3.3.0
+    app.kubernetes.io/version: 3.3.1
   name: nginx
 spec:
   controller: nginx.org/ingress-controller
