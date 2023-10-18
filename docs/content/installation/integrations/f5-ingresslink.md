@@ -8,16 +8,13 @@ toc: true
 docs: "DOCS-600"
 ---
 
+F5 IngressLink is the integration between NGINX Ingress Controller and [F5 BIG-IP Container Ingress Services](https://clouddocs.f5.com/containers/latest/) (CIS) that configures an F5 BIG-IP device as a load balancer for NGINX Ingress Controller pods.
 
-F5 IngressLink is the integration between NGINX Ingress Controller and [F5 Container Ingress Services](https://clouddocs.f5.com/containers/v2/) (CIS) that configures an F5 BIG-IP device as a load balancer for NGINX Ingress Controller pods.
+## Install NGINX Ingress Controller with the integration enabled
 
-## Configuration
+The steps to enable the integration depend on the option chosen to install NGINX Ingress Controller: Using [Manifests]({{< relref "installation/installing-nic/installation-with-manifests" >}}) or using the [Helm chart]({{< relref "installation/installing-nic/installation-with-helm" >}}).
 
-### 1. Install the Ingress Controller with the Integration Enabled
-
-This step depends on how you install the Ingress Controller: using [Manifests]({{< relref "installation/installing-nic/installation-with-manifests" >}}) or the [Helm chart]({{< relref "installation/installing-nic/installation-with-helm" >}}).
-
-#### Manifests Installation
+### Installation using manifests
 
 1. Create a service for the Ingress Controller pods for ports 80 and 443. For example:
 
@@ -43,8 +40,9 @@ This step depends on how you install the Ingress Controller: using [Manifests]({
         app: nginx-ingress
     ```
 
-    Note the label `app: ingresslink`. We will use it in the Step 2.
-1. In the [ConfigMap]({{< relref "configuration/global-configuration/configmap-resource" >}}), enable the PROXY protocol, which the BIG-IP system will use to pass the client IP and port information to NGINX. For the  `set-real-ip-from` key, use the subnet of the IP, which the BIG-IP system uses to send traffic to NGINX:
+    Note the label `app: ingresslink`. We will use it in the [Configure CIS](#configure-cis) step.
+
+1. In the [ConfigMap resource]({{< relref "configuration/global-configuration/configmap-resource" >}}) enable the proxy protocol, which the BIG-IP system will use to pass the client IP and port information to NGINX. For the  `set-real-ip-from` key, use the subnet of the IP which the BIG-IP system uses to send traffic to NGINX:
 
     ```yaml
     proxy-protocol: "True"
@@ -52,7 +50,7 @@ This step depends on how you install the Ingress Controller: using [Manifests]({
     set-real-ip-from: "0.0.0.0/0"
     ```
 
-1. Deploy the Ingress Controller with additional [command-line arguments]({{< relref "configuration/global-configuration/command-line-arguments" >}}):
+1. Deploy NGINX Ingress Controller with additional [command-line arguments]({{< relref "configuration/global-configuration/command-line-arguments" >}}):
 
     ```yaml
     args:
@@ -61,11 +59,11 @@ This step depends on how you install the Ingress Controller: using [Manifests]({
     . . .
     ```
 
-    where `ingresslink` references the name of the IngressLink resource from Step 2, and `report-ingress-status` enables [reporting Ingress statuses]({{< relref "configuration/global-configuration/reporting-resources-status#ingress-resources" >}}).
+    where `ingresslink` references the name of the IngressLink resource from step 1, and `report-ingress-status` enables [reporting ingress statuses]({{< relref "configuration/global-configuration/reporting-resources-status#ingress-resources" >}}).
 
-#### Helm Installation
+### Installation using Helm
 
-Install a helm release with the following values that replicate the Manifest installation above:
+Install a Helm release with the following values:
 
 ```yaml
 controller:
@@ -83,12 +81,14 @@ controller:
       app: ingresslink
 ```
 
-We will use the values for the parameters `ingressLink` and `extraLabels` in Step 2. For the  `set-real-ip-from` key, use the subnet of the IP, which the BIG-IP system uses to send traffic to NGINX.
+We will use the `ingressLink` and `extraLabels` parameter values to configure CIS in the next section. For the  `set-real-ip-from` key, use the subnet of the IP which the BIG-IP system uses to send traffic to NGINX.
 
-### 2. Configure CIS
+## Configure CIS
 
-To enable the integration, the F5 CIS must be deployed in the cluster and configured to support the integration. Follow the instructions on the [CIS documentation portal](https://clouddocs.f5.com/containers/latest/userguide/ingresslink/#configuring-ingresslink). Ensure that:
+To enable the integration, F5 BIG-IP Container Ingress Services must be deployed in the cluster and configured to support the integration. Follow the instructions on the [CIS documentation portal](https://clouddocs.f5.com/containers/latest/userguide/ingresslink/#configuring-ingresslink). 
 
-- The name of the IngressLink resource is the same as in Step 1 -- `nginx-ingress`.
-- The selector in the IngressLink resource is the same as the Service labels configured in Step 1 -- `app: ingresslink`.
-- The IngressLink must belong to the same namespace as the Ingress Controller pod -- `nginx-ingress` or the namespace used for installing the Helm chart.
+Make sure that:
+
+- The name of the IngressLink resource is the same as the one used during the installation of NGINX Ingress Controller (`nginx-ingress` in the previous example).
+- The selector in the IngressLink resource is the same as the Service labels configured during Ingress Controller installation (`app: ingresslink` in the previous example).
+- The IngressLink must belong to the same namespace as the Ingress Controller pod (`nginx-ingress` or the namespace used for installing the Helm chart).
