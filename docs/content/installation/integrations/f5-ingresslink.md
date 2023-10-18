@@ -85,7 +85,7 @@ We will use the `ingressLink` and `extraLabels` parameter values to configure CI
 
 ## Configure CIS
 
-To enable the integration, F5 BIG-IP Container Ingress Services must be deployed in the cluster and configured to support the integration. Follow the instructions on the [CIS documentation portal](https://clouddocs.f5.com/containers/latest/userguide/ingresslink/#configuring-ingresslink). 
+To enable the integration, F5 BIG-IP Container Ingress Services must be deployed in the cluster and configured to support the integration. Follow the instructions on the [CIS documentation portal](https://clouddocs.f5.com/containers/latest/userguide/ingresslink/#configuring-ingresslink).
 
 Make sure that:
 
