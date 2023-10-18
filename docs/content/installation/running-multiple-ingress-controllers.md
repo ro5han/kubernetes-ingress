@@ -1,8 +1,8 @@
 ---
-title: Running Multiple Ingress Controllers
+title: Running Multiple NGINX Ingress Controllers
 
 description: "This document explains how to run multiple NGINX Ingress Controllers."
-weight: 2100
+weight: 400
 doctypes: [""]
 aliases:
     - /multiple-ingress-controllers/
@@ -33,7 +33,7 @@ The default Ingress class of NGINX Ingress Controller is `nginx`, which means th
 
 **Notes**:
 
-- If the class is not set in an Ingress resource, Kubernetes will set it to the class of the default Ingress Controller. To make the Ingress Controller the default one, the `ingressclass.kubernetes.io/is-default-class` must be set on the IngressClass resource. See Step 3 *Create an IngressClass resource* of the [Create Common Resources](/nginx-ingress-controller/installation/installation-with-manifests/#2-create-common-resources) section.
+- If the class is not set in an Ingress resource, Kubernetes will set it to the class of the default Ingress Controller. To make the Ingress Controller the default one, the `ingressclass.kubernetes.io/is-default-class` must be set on the IngressClass resource. See Step 3 *Create an IngressClass resource* of the [Create Common Resources]({{< relref "installation/installing-nic/installation-with-manifests.md#create-common-resources" >}}) section.
 - For VirtualServer, VirtualServerRoute, Policy and TransportServer resources the Ingress Controller will always handle resources with an empty class.
 
 ## Running NGINX Ingress Controller and Another Ingress Controller
@@ -54,6 +54,6 @@ Considering the options above, you can run multiple NGINX Ingress Controllers, e
 
 ## See Also
 
-- [Command-line arguments](/nginx-ingress-controller/configuration/global-configuration/command-line-arguments)
+- [Command-line arguments]({{< relref "configuration/global-configuration/command-line-arguments" >}})
 
-**Note**: all mentioned command-line arguments are also available as the parameters in the [Helm chart](/nginx-ingress-controller/installation/installation-with-helm).
+**Note**: all mentioned command-line arguments are also available as the parameters in the [Helm chart]({{< relref "installation/installing-nic/installation-with-helm" >}}).
