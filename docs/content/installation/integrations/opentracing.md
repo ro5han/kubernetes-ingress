@@ -72,7 +72,7 @@ Consider the following two cases:
 
 1. To enable OpenTracing for specific paths:
 
-    - You need to use [Mergeable Ingress resources]({{< relref "configuration/ingress-resources/cross-namespace-configuration" >}}) 
+    - You need to use [Mergeable Ingress resources]({{< relref "configuration/ingress-resources/cross-namespace-configuration" >}})
     - You need to use the location snippets annotation to enable OpenTracing for the paths of a specific Minion Ingress resource:
 
         ```yaml
@@ -90,7 +90,7 @@ Consider the following two cases:
     ```
 
 1. To disable OpenTracing for specific paths:
-    
+
     - You need to use [Mergeable Ingress resources]({{< relref "configuration/ingress-resources/cross-namespace-configuration" >}})
     - You need to use the location snippets annotation to disable OpenTracing for the paths of a specific Minion Ingress resource:
 
