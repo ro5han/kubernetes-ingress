@@ -8,7 +8,6 @@ docs: "DOCS-590"
 ---
 
 
-This document explains how the Ingress Controller handles host and listener collisions among resources.
 
 ## Winner Selection Algorithm
 
